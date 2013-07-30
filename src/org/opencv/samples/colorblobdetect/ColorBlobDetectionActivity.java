@@ -28,6 +28,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 
+
 public class ColorBlobDetectionActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
     private static final String  TAG              = "OCVSample::Activity";
 
@@ -77,6 +78,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        
     }
 
     @Override
@@ -117,12 +119,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     public boolean onTouch(View v, MotionEvent event){
-    	Log.i(TAG, "antes");
     	mDetector.setHsvBlack();
-    	Log.i(TAG, "HsvBlack listo");
-        mIsColorSelected = true;
-        Log.i(TAG, "cierto que ya lo seleccione");
-    	
+        mIsColorSelected = true;    	
     	return false;
     }
 
