@@ -2,6 +2,11 @@ package org.opencv.samples.colorblobdetect;
 
 import java.util.List;
 import java.util.Iterator;
+import java.io.IOException;
+import java.math.BigInteger;
+
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -27,6 +32,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
+import android.hardware.usb.UsbManager;
+import android.content.Context;
+
 
 
 public class ColorBlobDetectionActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
@@ -41,6 +49,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Size                 SPECTRUM_SIZE;
     private Scalar               CONTOUR_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
+    
 
     private CameraBridgeViewBase mOpenCvCameraView;
 
@@ -61,6 +70,9 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             }
         }
     };
+   
+    
+    
 
     public ColorBlobDetectionActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -85,6 +97,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onPause()
     {
         super.onPause();
+        // openCV
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
@@ -93,6 +106,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onResume()
     {
         super.onResume();
+        // openCV
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
@@ -100,6 +114,28 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         super.onDestroy();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
+    }
+    
+    public void sendData() throws IOException {
+    	UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+    	UsbSerialDriver sendDriver = UsbSerialProber.acquire(manager);
+    	
+    	if(sendDriver != null) {
+    		sendDriver.open();
+    		try{
+    			sendDriver.setBaudRate(9600);
+    			char dataToSend = '1';
+    			byte [] byteToSend = new byte[1]; 
+    			byteToSend[0] = (byte)dataToSend;
+    			sendDriver.write(byteToSend, 1000);
+    			
+    			
+    		} catch (IOException e) {
+    			// bla
+    		} finally {
+    			sendDriver.close();
+    		}
+    	}
     }
 
     public void onCameraViewStarted(int width, int height) {
@@ -155,7 +191,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
             Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
             mSpectrum.copyTo(spectrumLabel);
+            
+            try {
+            	sendData();
+            } catch (IOException e) {
+            	// bla
+            }
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
+        
 
         return mRgba;
     }
