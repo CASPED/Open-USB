@@ -184,19 +184,25 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             mCanDetector.process(mRgba);
             mSeeDetector.process(mRgba);
             mContDetector.process(mRgba);
+            
+            // contornos de mar y contenedor
             List<MatOfPoint> contoursCan = mCanDetector.getContours();
             List<MatOfPoint> contoursSee = mSeeDetector.getContours();
             List<MatOfPoint> contoursCont = mContDetector.getContours();
+            
             //Log.e(TAG, "Contours count: " + contours.size());
+            
+            // dibuja contornos
             Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
             Imgproc.drawContours(mRgba, contoursSee, -1, SEE_COLOR);
             Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
-            // Saca el rectangulo y punto medio de las latas
-            Iterator<MatOfPoint> each = contoursCan.iterator();
-            
-            while (each.hasNext()){
-            	Rect rectangulo = Imgproc.boundingRect(each.next());           	
+            // Saca el rectangulo y punto medio de la lata con el contorno mas grande
+            if(mCanDetector.getNumContours()>0){
+            	// retorna el contorno mas grande 
+            	MatOfPoint biggestContourCan = mCanDetector.getBiggestContour();
+                
+            	Rect rectangulo = Imgproc.boundingRect(biggestContourCan);           	
             	Point p1 = new Point ((double)rectangulo.x, (double)rectangulo.y); 
             	Point p2 = new Point ((double)rectangulo.x + rectangulo.width, (double)rectangulo.y + rectangulo.height);
             	Point center = new Point(rectangulo.x + (double)rectangulo.width/2, rectangulo.y + (double)rectangulo.height/2);
@@ -204,12 +210,6 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             	Core.rectangle(mRgba, p1, p2, RECTANGLE_COLOR);
             	Core.circle(mRgba, center, 3, RECTANGLE_COLOR); 
             }
-
-            Mat colorLabel = mRgba.submat(4, 68, 4, 68);
-            colorLabel.setTo(mBlobColorRgba);
-
-            Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
-            mSpectrum.copyTo(spectrumLabel);
             
             /*try {
             	sendData();

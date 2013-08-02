@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import android.util.Log;
+
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -11,7 +14,10 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+
 public class ColorBlobDetector {
+    private static final String  TAG              = "OCVSample::Activity";
+
     // Lower and Upper bounds for range checking in HSV color space
     private Scalar mLowerBound = new Scalar(0);
     private Scalar mUpperBound = new Scalar(0);
@@ -20,7 +26,9 @@ public class ColorBlobDetector {
     // Color radius for range checking in HSV color space
     private Scalar mColorRadius = new Scalar(25,50,50,0);
     private Mat mSpectrum = new Mat();
+    // Listas de objetos detectados 
     private List<MatOfPoint> mContours = new ArrayList<MatOfPoint>();
+    private List<Double> mSizes = new ArrayList<Double>(); 
 
     // Cache
     Mat mPyrDownMat = new Mat();
@@ -115,15 +123,44 @@ public class ColorBlobDetector {
         }
 
         // Filter contours by area and resize to fit the original image size
+        mSizes.clear();
         mContours.clear();
         each = contours.iterator();
         while (each.hasNext()) {
             MatOfPoint contour = each.next();
-            if (Imgproc.contourArea(contour) > mMinContourArea*maxArea) {
+            Double area =  Imgproc.contourArea(contour); 
+            if (area > mMinContourArea*maxArea) {
                 Core.multiply(contour, new Scalar(4,4), contour);
+                mSizes.add(area); 
                 mContours.add(contour);
             }
         }
+    }
+    
+    public MatOfPoint getBiggestContour() {
+    	Iterator<Double> each = mSizes.iterator();
+    	int index = 0; 
+    	int max_index = 0; 
+    	Double max_size = 0.0; 
+    	Double current_size; 
+    	
+		Log.e(TAG, "tam_sizes: " + mSizes.size()); 
+		Log.e(TAG, "tam_contours: " + mContours.size()); 
+
+    	while (each.hasNext()){
+    		current_size = each.next();
+    		if (current_size > max_size) {
+    			Log.e(TAG, "max_index: " + max_index); 
+    			max_size = current_size; 
+    			max_index = index; 
+    		}
+    		index++; 
+    	}
+    	return mContours.get(max_index); 
+    }
+    
+    public int getNumContours() {
+    	return mContours.size();
     }
 
     public List<MatOfPoint> getContours() {
