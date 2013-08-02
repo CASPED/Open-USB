@@ -1,9 +1,8 @@
 package org.opencv.samples.colorblobdetect;
 
 import java.util.List;
-import java.util.Iterator;
 import java.io.IOException;
-import java.math.BigInteger;
+
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -19,7 +18,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.imgproc.Imgproc;
@@ -42,15 +40,12 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
     private boolean              mIsColorSelected = false;
     private Mat                  mRgba;
-    private Scalar               mBlobColorRgba;
-    private Scalar               mBlobColorHsv;
+  
     private ColorBlobDetector    mCanDetector;
-    private ColorBlobDetector    mSeeDetector;
+    private ColorBlobDetector    mSeaDetector;
     private ColorBlobDetector    mContDetector;
-    private Mat                  mSpectrum;
-    private Size                 SPECTRUM_SIZE;
     private Scalar               CAN_COLOR;
-    private Scalar               SEE_COLOR;
+    private Scalar               SEA_COLOR;
     private Scalar               CONT_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
     
@@ -89,7 +84,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.color_blob_detection_surface_view);
-
+        // inicia camara 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
         
@@ -99,7 +94,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onPause()
     {
         super.onPause();
-        // openCV
+        // apaga camara 
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
@@ -108,23 +103,28 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onResume()
     {
         super.onResume();
-        // openCV
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
     }
 
     public void onDestroy() {
         super.onDestroy();
+        // apaga camara 
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
     
+    // funcion para enviar datos a arduino por serial 
     public void sendData() throws IOException {
+    	// obtiene manejador de dispositivos usb 
     	UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+    	// encuentra el primer driver disponible 
     	UsbSerialDriver sendDriver = UsbSerialProber.acquire(manager);
     	
+    	// si encontre driver
     	if(sendDriver != null) {
     		sendDriver.open();
     		try{
+    			// escribir bytes de datos 
     			sendDriver.setBaudRate(9600);
     			char dataToSend = '1';
     			byte [] byteToSend = new byte[1]; 
@@ -143,14 +143,10 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mCanDetector = new ColorBlobDetector();
-        mSeeDetector = new ColorBlobDetector();
+        mSeaDetector = new ColorBlobDetector();
         mContDetector = new ColorBlobDetector();
-        mSpectrum = new Mat();
-        mBlobColorRgba = new Scalar(255);
-        mBlobColorHsv = new Scalar(255);
-        SPECTRUM_SIZE = new Size(200, 64);
         CAN_COLOR = new Scalar(255,0,0,255);
-        SEE_COLOR = new Scalar(145,245,51,0);
+        SEA_COLOR = new Scalar(145,245,51,0);
         CONT_COLOR = new Scalar(245,245,51,0);
         RECTANGLE_COLOR = new Scalar(0, 255, 255, 0);
                 
@@ -161,13 +157,16 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     public boolean onTouch(View v, MotionEvent event){
+    	// ejecutar solo si ya calibre todo
     	if( ((ColorsApplication)getApplication()).areAllSelected() ) {
+    		// obtener los valores globales seleccionados al calibrar
 	    	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
-	    	Scalar hsvSeeColor=((ColorsApplication)getApplication()).getSeeColor();
+	    	Scalar hsvSeaColor=((ColorsApplication)getApplication()).getSeaColor();
 	    	Scalar hsvContColor=((ColorsApplication)getApplication()).getContColor();
 	    	
+	    	//inicializar el color promedio en cada detector 
 	    	mCanDetector.setHsvColor(hsvCanColor);
-	    	mSeeDetector.setHsvColor(hsvSeeColor);
+	    	mSeaDetector.setHsvColor(hsvSeaColor);
 	    	mContDetector.setHsvColor(hsvContColor);
 	    	
 	        mIsColorSelected = true;    	
@@ -181,20 +180,21 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         mRgba = inputFrame.rgba();
 
         if (mIsColorSelected) {
+        	// un detector para cada objeto 
             mCanDetector.process(mRgba);
-            mSeeDetector.process(mRgba);
+            mSeaDetector.process(mRgba);
             mContDetector.process(mRgba);
             
-            // contornos de mar y contenedor
+            // una lista de contornos para cada objeto 
             List<MatOfPoint> contoursCan = mCanDetector.getContours();
-            List<MatOfPoint> contoursSee = mSeeDetector.getContours();
+            List<MatOfPoint> contoursSea = mSeaDetector.getContours();
             List<MatOfPoint> contoursCont = mContDetector.getContours();
             
             //Log.e(TAG, "Contours count: " + contours.size());
             
             // dibuja contornos
             Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
-            Imgproc.drawContours(mRgba, contoursSee, -1, SEE_COLOR);
+            Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
             Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
             // Saca el rectangulo y punto medio de la lata con el contorno mas grande
@@ -210,6 +210,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             	Core.rectangle(mRgba, p1, p2, RECTANGLE_COLOR);
             	Core.circle(mRgba, center, 3, RECTANGLE_COLOR); 
             }
+            
+            // aqui va el codigo donde envio datos a la arduino 
             
             /*try {
             	sendData();

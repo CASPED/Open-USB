@@ -51,20 +51,17 @@
         </activity>
         <activity
             android:name="org.opencv.samples.colorblobdetect.CalibrateActivity"
-            android:label="@string/title_activity_calibrate_can" >
+            android:configChanges="keyboardHidden|orientation"
+            android:label="@string/title_activity_calibrate_can" 
+            android:screenOrientation="landscape" >
         </activity>
         <activity
             android:name="org.opencv.samples.colorblobdetect.MainActivity"
             android:label="@string/title_activity_main" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name="org.opencv.samples.colorblobdetect.CalibrateSeeActivity"
-            android:label="@string/title_activity_calibrate_see" >
         </activity>
     </application>
 

@@ -18,13 +18,14 @@ import org.opencv.imgproc.Imgproc;
 public class ColorBlobDetector {
     private static final String  TAG              = "OCVSample::Activity";
 
-    // Lower and Upper bounds for range checking in HSV color space
+    // Cotas inferior y superior para chequear el rango HSV del color en el espacio 
     private Scalar mLowerBound = new Scalar(0);
     private Scalar mUpperBound = new Scalar(0);
-    // Minimum contour area in percent for contours filtering
+    // porcentaje de area minimo para filtrar contornos encontrados
     private static double mMinContourArea = 0.1;
-    // Color radius for range checking in HSV color space
+    // Radio de color para chequear rango HSV del color en el espacio 
     private Scalar mColorRadius = new Scalar(25,50,50,0);
+
     private Mat mSpectrum = new Mat();
     // Listas de objetos detectados 
     private List<MatOfPoint> mContours = new ArrayList<MatOfPoint>();
@@ -41,6 +42,7 @@ public class ColorBlobDetector {
         mColorRadius = radius;
     }
 
+    // inicializa el rango de colores 
     public void setHsvColor(Scalar hsvColor) {
         double minH = (hsvColor.val[0] >= mColorRadius.val[0]) ? hsvColor.val[0]-mColorRadius.val[0] : 0;
         double maxH = (hsvColor.val[0]+mColorRadius.val[0] <= 255) ? hsvColor.val[0]+mColorRadius.val[0] : 255;
@@ -67,6 +69,7 @@ public class ColorBlobDetector {
         Imgproc.cvtColor(spectrumHsv, mSpectrum, Imgproc.COLOR_HSV2RGB_FULL, 4);
     }
     
+    // funcion no utilizada, inicializa el rango de color negro manualmente "hardcoded"
     public void setHsvBlack(){
     	mLowerBound.val[0] = 0;
     	mUpperBound.val[0] = 255;
@@ -99,20 +102,24 @@ public class ColorBlobDetector {
         mMinContourArea = area;
     }
 
+ 
     public void process(Mat rgbaImage) {
+    	// baja dos veces la calidad de la imagen 
         Imgproc.pyrDown(rgbaImage, mPyrDownMat);
         Imgproc.pyrDown(mPyrDownMat, mPyrDownMat);
 
+        // pasa de rgb a hsv
         Imgproc.cvtColor(mPyrDownMat, mHsvMat, Imgproc.COLOR_RGB2HSV_FULL);
 
+        // Crea una mascara con los blobs en el rango y dilata la imagen 
         Core.inRange(mHsvMat, mLowerBound, mUpperBound, mMask);
         Imgproc.dilate(mMask, mDilatedMask, new Mat());
 
+        // lista donde coloca los contornos de blobs encontrados
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-
         Imgproc.findContours(mDilatedMask, contours, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        // Find max contour area
+        // Encuentra el area maxima del contorno para hacer resize posterior 
         double maxArea = 0;
         Iterator<MatOfPoint> each = contours.iterator();
         while (each.hasNext()) {
@@ -122,7 +129,7 @@ public class ColorBlobDetector {
                 maxArea = area;
         }
 
-        // Filter contours by area and resize to fit the original image size
+        // Filtra los contornos encontrados por area y reacomoda para que encaje en la imagen original 
         mSizes.clear();
         mContours.clear();
         each = contours.iterator();
@@ -131,12 +138,15 @@ public class ColorBlobDetector {
             Double area =  Imgproc.contourArea(contour); 
             if (area > mMinContourArea*maxArea) {
                 Core.multiply(contour, new Scalar(4,4), contour);
+                // mantiene una lista con el area de los contornos 
                 mSizes.add(area); 
+                // mantiene una lista de contornos 
                 mContours.add(contour);
             }
         }
     }
     
+    // obtiene el contorno de mayor area 
     public MatOfPoint getBiggestContour() {
     	Iterator<Double> each = mSizes.iterator();
     	int index = 0; 
@@ -159,10 +169,12 @@ public class ColorBlobDetector {
     	return mContours.get(max_index); 
     }
     
+    // da el numero de contornos encontrados 
     public int getNumContours() {
     	return mContours.size();
     }
 
+    // devuelve todos los contornos
     public List<MatOfPoint> getContours() {
         return mContours;
     }

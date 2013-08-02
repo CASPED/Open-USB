@@ -6,20 +6,22 @@ import android.app.Application;
 
 public class ColorsApplication extends Application {
 	
+	// color promedio de los blobs segun el objeto
 	private Scalar avgCanColor;
-	private Scalar avgSeeColor;
+	private Scalar avgSeaColor;
 	private Scalar avgContColor;
+	// booleanos para saber si fue seleccionador el color
 	private boolean canColorSelected = false;
-	private boolean seeColorSelected = false;
+	private boolean seaColorSelected = false;
 	private boolean contColorSelected = false;
 	
-	public Scalar getSeeColor() {
-		return avgSeeColor;
+	public Scalar getSeaColor() {
+		return avgSeaColor;
 	}
 	
-	public void setSeeColor(Scalar hsvColor) {
-		this.avgSeeColor = hsvColor;
-		this.seeColorSelected = true;
+	public void setSeaColor(Scalar hsvColor) {
+		this.avgSeaColor = hsvColor;
+		this.seaColorSelected = true;
 		
 	}
 	
@@ -41,8 +43,9 @@ public class ColorsApplication extends Application {
 		this.contColorSelected = true;
 	}
 	
+	// si todos los colores ya fueron calibrados 
 	public boolean areAllSelected(){
-		return seeColorSelected && canColorSelected && contColorSelected;
+		return seaColorSelected && canColorSelected && contColorSelected;
 		
 	}
 	

@@ -87,7 +87,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         
 		setContentView(R.layout.activity_calibrate_can);
-		
+		// inicializo la camara 
 		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.activity_calibrate_can);
         mOpenCvCameraView.setCvCameraViewListener(this);	        
 		
@@ -96,6 +96,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 	@Override
 	public void onPause() {
 		super.onPause();
+		// si la camara esta abierta, cerrarla 
 	    if (mOpenCvCameraView != null)
 	    	mOpenCvCameraView.disableView();
 	}
@@ -108,6 +109,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 
 	public void onDestroy() {
 		super.onDestroy();
+		// si la camara esta abierta, cerrarla
 		if (mOpenCvCameraView != null)
 			mOpenCvCameraView.disableView();
 	}
@@ -115,20 +117,23 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 
 	public boolean onTouch(View v, MotionEvent event) {
 		Log.i(TAG, "Tocado");
-		
+		// columnas y filas de la imagen
         int cols = mRgba.cols();
         int rows = mRgba.rows();
 
         int xOffset = (mOpenCvCameraView.getWidth() - cols) / 2;
         int yOffset = (mOpenCvCameraView.getHeight() - rows) / 2;
 
+        // toma las coordenadas del punto tocado en pantalla 
         int x = (int)event.getX() - xOffset;
         int y = (int)event.getY() - yOffset;
 
         Log.i(TAG, "Touch image coordinates: (" + x + ", " + y + ")");
 
+        // verifica que el punto tocado este dentro de la imagen 
         if ((x < 0) || (y < 0) || (x > cols) || (y > rows)) return false;
 
+        // crea un rectangulo alrededor del punto tocado
         Rect touchedRect = new Rect();
 
         touchedRect.x = (x>4) ? x-4 : 0;
@@ -142,7 +147,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
         Mat touchedRegionHsv = new Mat();
         Imgproc.cvtColor(touchedRegionRgba, touchedRegionHsv, Imgproc.COLOR_RGB2HSV_FULL);
 
-        // Calculate average color of touched region
+        // Calcula el color promedio de la region tocada 
         mBlobColorHsv = Core.sumElems(touchedRegionHsv);
         int pointCount = touchedRect.width*touchedRect.height;
         for (int i = 0; i < mBlobColorHsv.val.length; i++)
@@ -153,15 +158,15 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
         Log.i(TAG, "Touched rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
                 ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
         
-        // Verificar qué estamos calibrando
+        // Verificar que objeto estamos calibrando 
         Intent myIntent = getIntent();
         int flag= myIntent.getIntExtra("flag",-1); 
         
-        // Colocar el color promedio en el estado global
+        // Colocar el color promedio en el estado global, dependiendo del caso
         if (flag == 1)
         	((ColorsApplication)getApplication()).setCanColor(mBlobColorHsv);
         if (flag == 2)
-        	((ColorsApplication)getApplication()).setSeeColor(mBlobColorHsv);
+        	((ColorsApplication)getApplication()).setSeaColor(mBlobColorHsv);
         if (flag == 3)
         	((ColorsApplication)getApplication()).setContColor(mBlobColorHsv);
         
@@ -170,6 +175,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 
         Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE);
 
+        // indicar que ya seleccione el color del objeto 
         mIsColorSelected = true;
 
         touchedRegionRgba.release();
@@ -178,15 +184,22 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
         return false; // don't need subsequent touch events
     }
 	
+	// en cada cuadro de la imagen recibida por la camara 
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         
+        // si ya seleccione el color 
         if (mIsColorSelected) {
+        	// procesar la imagen 
             mDetector.process(mRgba);
+            // obtener los contornos de los blobs detectados 
             List<MatOfPoint> contours = mDetector.getContours();
+            
             Log.e(TAG, "Contours count: " + contours.size());
+            // dibujar los contornos 
             Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
 
+            // dibuja cuadro superior con el color promedio y el rango de colores seleccionados
             Mat colorLabel = mRgba.submat(4, 68, 4, 68);
             colorLabel.setTo(mBlobColorRgba);
 
