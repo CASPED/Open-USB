@@ -31,29 +31,28 @@
         android:required="false" />
 
     <application
+        android:name="org.opencv.samples.colorblobdetect.ColorsApplication"
         android:allowBackup="true"
         android:icon="@drawable/icon"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:name="ColorsApplication">
-        
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
         <activity
             android:name="org.opencv.samples.colorblobdetect.ColorBlobDetectionActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
             android:screenOrientation="landscape" >
-            <intent-filter>         
+            <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-			</intent-filter>
+            </intent-filter>
+
             <meta-data
-            	android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-           		android:resource="@xml/device_filter" />
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
         </activity>
-        
         <activity
-            android:name="org.opencv.samples.colorblobdetect.CalibrateCanActivity"
+            android:name="org.opencv.samples.colorblobdetect.CalibrateActivity"
             android:label="@string/title_activity_calibrate_can" >
         </activity>
-        
         <activity
             android:name="org.opencv.samples.colorblobdetect.MainActivity"
             android:label="@string/title_activity_main" >
@@ -61,9 +60,11 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-                
             </intent-filter>
-           
+        </activity>
+        <activity
+            android:name="org.opencv.samples.colorblobdetect.CalibrateSeeActivity"
+            android:label="@string/title_activity_calibrate_see" >
         </activity>
     </application>
 

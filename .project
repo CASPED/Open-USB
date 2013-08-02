@@ -3,6 +3,10 @@
 	<name>OpenCV Sample - color-blob-detection</name>
 	<comment></comment>
 	<projects>
+		<project>OpenCV Library - @OPENCV_VERSION@</project>
+		<project>OpenCV_JavaAPI_Tests</project>
+		<project>OpenCVEngineService</project>
+		<project>package</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -44,10 +44,14 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Mat                  mRgba;
     private Scalar               mBlobColorRgba;
     private Scalar               mBlobColorHsv;
-    private ColorBlobDetector    mDetector;
+    private ColorBlobDetector    mCanDetector;
+    private ColorBlobDetector    mSeeDetector;
+    private ColorBlobDetector    mContDetector;
     private Mat                  mSpectrum;
     private Size                 SPECTRUM_SIZE;
-    private Scalar               CONTOUR_COLOR;
+    private Scalar               CAN_COLOR;
+    private Scalar               SEE_COLOR;
+    private Scalar               CONT_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
     
 
@@ -71,8 +75,6 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         }
     };
    
-    
-    
 
     public ColorBlobDetectionActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -140,12 +142,16 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
-        mDetector = new ColorBlobDetector();
+        mCanDetector = new ColorBlobDetector();
+        mSeeDetector = new ColorBlobDetector();
+        mContDetector = new ColorBlobDetector();
         mSpectrum = new Mat();
         mBlobColorRgba = new Scalar(255);
         mBlobColorHsv = new Scalar(255);
         SPECTRUM_SIZE = new Size(200, 64);
-        CONTOUR_COLOR = new Scalar(255,0,0,255);
+        CAN_COLOR = new Scalar(255,0,0,255);
+        SEE_COLOR = new Scalar(145,245,51,0);
+        CONT_COLOR = new Scalar(245,245,51,0);
         RECTANGLE_COLOR = new Scalar(0, 255, 255, 0);
                 
     }
@@ -155,26 +161,39 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     public boolean onTouch(View v, MotionEvent event){
-    	Scalar hsvColor=((ColorsApplication)getApplication()).getCanColor();
-    	mDetector.setHsvColor(hsvColor);
-        mIsColorSelected = true;    	
+    	if( ((ColorsApplication)getApplication()).areAllSelected() ) {
+	    	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
+	    	Scalar hsvSeeColor=((ColorsApplication)getApplication()).getSeeColor();
+	    	Scalar hsvContColor=((ColorsApplication)getApplication()).getContColor();
+	    	
+	    	mCanDetector.setHsvColor(hsvCanColor);
+	    	mSeeDetector.setHsvColor(hsvSeeColor);
+	    	mContDetector.setHsvColor(hsvContColor);
+	    	
+	        mIsColorSelected = true;    	
+    	}
     	return false;
     }
 
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        Log.i(TAG, "vamoja empezar");
-
     	
         mRgba = inputFrame.rgba();
 
         if (mIsColorSelected) {
-            mDetector.process(mRgba);
-            List<MatOfPoint> contours = mDetector.getContours();
-            Log.e(TAG, "Contours count: " + contours.size());
-            Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
+            mCanDetector.process(mRgba);
+            mSeeDetector.process(mRgba);
+            mContDetector.process(mRgba);
+            List<MatOfPoint> contoursCan = mCanDetector.getContours();
+            List<MatOfPoint> contoursSee = mSeeDetector.getContours();
+            List<MatOfPoint> contoursCont = mContDetector.getContours();
+            //Log.e(TAG, "Contours count: " + contours.size());
+            Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
+            Imgproc.drawContours(mRgba, contoursSee, -1, SEE_COLOR);
+            Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
-            Iterator<MatOfPoint> each = contours.iterator();
+            // Saca el rectangulo y punto medio de las latas
+            Iterator<MatOfPoint> each = contoursCan.iterator();
             
             while (each.hasNext()){
             	Rect rectangulo = Imgproc.boundingRect(each.next());           	
@@ -192,12 +211,12 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
             mSpectrum.copyTo(spectrumLabel);
             
-            try {
+            /*try {
             	sendData();
             } catch (IOException e) {
             	// bla
-            }
-            android.os.Process.killProcess(android.os.Process.myPid());
+            }*/
+            //android.os.Process.killProcess(android.os.Process.myPid());
         }
         
 

@@ -7,7 +7,10 @@
     <string name="hello_home">Can Detection - OpenCVAndroidSDK</string>
     <string name="title_activity_main">OPEN Robot Vision</string>
     <string name="calibrar_latas">Calibrar Latas</string>
-    <string name="detectar_latas">Detectar Latas</string>
-        
+    <string name="calibrar_mar">Calibrar Mar</string>
+    <string name="calibrar_cont">Calibrar Contenedor</string>
+    <string name="detectar">Detectar</string>
+    <string name="title_activity_calibrate_see">CalibrateSeeActivity</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>

@@ -9,23 +9,43 @@
     tools:context=".MainActivity" >
 
     <TextView
+        android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hello_home" />
-    
-    <Button
-        android:id="@+id/buttonCalibrar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-		android:layout_alignParentLeft="true"
-		android:layout_marginTop="30dp"
-        android:text="@string/calibrar_latas" />
+
     <Button
         android:id="@+id/buttonDetectar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-		android:layout_alignParentRight="true"
+        android:layout_alignParentRight="true"
         android:layout_marginTop="30dp"
-        android:text="@string/detectar_latas" />
+        android:text="@string/detectar" />
+
+    <Button
+        android:id="@+id/buttonCalibrarLatas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginTop="30dp"
+        android:text="@string/calibrar_latas" />
+
+    <Button
+        android:id="@+id/buttonCalibrarCont"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/buttonCalibrarMar"
+        android:layout_alignBottom="@+id/buttonCalibrarMar"
+        android:layout_alignRight="@+id/buttonDetectar"
+        android:text="@string/calibrar_cont" />
+
+    <Button
+        android:id="@+id/buttonCalibrarMar"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/buttonCalibrarLatas"
+        android:layout_below="@+id/buttonDetectar"
+        android:layout_marginTop="33dp"
+        android:text="@string/calibrar_mar" />
 
 </RelativeLayout>

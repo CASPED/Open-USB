@@ -19,6 +19,7 @@ import org.opencv.imgproc.Imgproc;
 
 import android.os.Bundle;
 import android.app.Activity;	
+import android.content.Intent;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,9 +28,7 @@ import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 
 
-
-
-public class CalibrateCanActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
+public class CalibrateActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
 	
 		private static final String  TAG              = "OCVSample::Activity";
 
@@ -52,7 +51,7 @@ public class CalibrateCanActivity extends Activity implements OnTouchListener, C
 	                {
 	                    Log.i(TAG, "OpenCV loaded successfully");
 	                    mOpenCvCameraView.enableView();
-	                    mOpenCvCameraView.setOnTouchListener(CalibrateCanActivity.this);
+	                    mOpenCvCameraView.setOnTouchListener(CalibrateActivity.this);
 	                } break;
 	                default:
 	                {
@@ -62,7 +61,7 @@ public class CalibrateCanActivity extends Activity implements OnTouchListener, C
 	        }
 	    };
 
-	    public CalibrateCanActivity() {
+	    public CalibrateActivity() {
 	        Log.i(TAG, "Instantiated new " + this.getClass());
 	    }
 	    
@@ -154,8 +153,17 @@ public class CalibrateCanActivity extends Activity implements OnTouchListener, C
         Log.i(TAG, "Touched rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
                 ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
         
-        // colocar el color promedio en el estado global
-        ((ColorsApplication)getApplication()).setCanColor(mBlobColorHsv);
+        // Verificar qué estamos calibrando
+        Intent myIntent = getIntent();
+        int flag= myIntent.getIntExtra("flag",-1); 
+        
+        // Colocar el color promedio en el estado global
+        if (flag == 1)
+        	((ColorsApplication)getApplication()).setCanColor(mBlobColorHsv);
+        if (flag == 2)
+        	((ColorsApplication)getApplication()).setSeeColor(mBlobColorHsv);
+        if (flag == 3)
+        	((ColorsApplication)getApplication()).setContColor(mBlobColorHsv);
         
         // inicializar rango en clase detector 
         mDetector.setHsvColor(mBlobColorHsv);

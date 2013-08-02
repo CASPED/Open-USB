@@ -15,10 +15,31 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		Button calibrar = (Button) findViewById(R.id.buttonCalibrar);
-        calibrar.setOnClickListener(new View.OnClickListener() {
+		Button calibrarLata = (Button) findViewById(R.id.buttonCalibrarLatas);
+        calibrarLata.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                Intent myIntent = new Intent(view.getContext(), CalibrateCanActivity.class);
+                Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
+                myIntent.putExtra("flag", 1);
+                startActivityForResult(myIntent, 0);
+            }
+
+        });
+        
+        Button calibrarMar = (Button) findViewById(R.id.buttonCalibrarMar);
+        calibrarMar.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
+                myIntent.putExtra("flag", 2);
+                startActivityForResult(myIntent, 0);
+            }
+
+        });
+        
+        Button calibrarCont = (Button) findViewById(R.id.buttonCalibrarCont);
+        calibrarCont.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
+                myIntent.putExtra("flag", 3);
                 startActivityForResult(myIntent, 0);
             }
 
@@ -32,6 +53,10 @@ public class MainActivity extends Activity {
             }
 
         });
+        
+        
+        
+        
 	}
 
 
