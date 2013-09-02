@@ -10,7 +10,7 @@ public class ColorsApplication extends Application {
 	private Scalar avgCanColor;
 	private Scalar avgSeaColor;
 	private Scalar avgContColor;
-	// booleanos para saber si fue seleccionador el color
+	// booleanos para saber si fue seleccionado el color
 	private boolean canColorSelected = false;
 	private boolean seaColorSelected = false;
 	private boolean contColorSelected = false;

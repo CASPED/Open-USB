@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+//import com.hoho.android.usbserial.examples.R;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -30,6 +31,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
+import android.widget.TextView;
 import android.hardware.usb.UsbManager;
 import android.content.Context;
 
@@ -49,8 +51,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar               CONT_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
     
-
     private CameraBridgeViewBase mOpenCvCameraView;
+    private TextView driverStatus;
+    
+    // Para la comunicación serial con arduino
+    // Manejador de dispositivos usb 
+	UsbManager manager;
+	// Dispositivo en uso o {@code null}
+	UsbSerialDriver sendDriver;
+    
 
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -80,13 +89,19 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
+        
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         setContentView(R.layout.color_blob_detection_surface_view);
+      
         // inicia camara 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        //driverStatus = (TextView) findViewById(R.id.driverStatus);
+
+        // Para la comunicación serial
+        this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        Log.i(TAG, "Despues de pedir driver");
         
     }
 
@@ -104,6 +119,29 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     {
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
+        Log.i(TAG, "called onResume");
+        // Obtener el driver para poder enviar datos al arduino 
+        this.sendDriver = UsbSerialProber.acquire(this.manager);
+        Log.i(TAG, "Resumed, sendDriver=" + sendDriver);
+        if (sendDriver == null) {
+        	Log.i(TAG, "Informar que no se encontró dispositivo");
+        	//driverStatus.setText("No serial device.");
+        } else {
+            try {
+            	sendDriver.open();
+            } catch (IOException e) {
+                Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
+                driverStatus.setText("Error al conectar con dispositivo: " + e.getMessage());
+                try {
+                    sendDriver.close();
+                } catch (IOException e2) {
+                    // Ignore.
+                }
+                sendDriver = null;
+                //return;
+            }
+            //driverStatus.setText("Serial device: " + sendDriver);
+        }
     }
 
     public void onDestroy() {
@@ -115,33 +153,25 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     // funcion para enviar datos a arduino por serial 
     public void sendData() throws IOException {
-    	// obtiene manejador de dispositivos usb 
-    	UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-    	// encuentra el primer driver disponible 
-    	UsbSerialDriver sendDriver = UsbSerialProber.acquire(manager);
-    	
-    	// si encontre driver
+    	    	
     	if(sendDriver != null) {
-    		sendDriver.open();
     		try{
     			// escribir bytes de datos 
-    			sendDriver.setBaudRate(9600);
+    			sendDriver.setBaudRate(115200);
     			char dataToSend = '1';
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
     			sendDriver.write(byteToSend, 1000);
-    			
-    			
     		} catch (IOException e) {
     			// bla
-    		} finally {
-    			sendDriver.close();
-    		}
+    		} 
     	}
+        
     }
 
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
+        Log.i(TAG, "Valores height "+ height + " width "+ width+ "/n");
         mCanDetector = new ColorBlobDetector();
         mSeaDetector = new ColorBlobDetector();
         mContDetector = new ColorBlobDetector();
@@ -197,21 +227,34 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
             Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
-            // Saca el rectangulo y punto medio de la lata con el contorno mas grande
-            if(mCanDetector.getNumContours()>0){
-            	// retorna el contorno mas grande 
-            	MatOfPoint biggestContourCan = mCanDetector.getBiggestContour();
-                
-            	Rect rectangulo = Imgproc.boundingRect(biggestContourCan);           	
-            	Point p1 = new Point ((double)rectangulo.x, (double)rectangulo.y); 
-            	Point p2 = new Point ((double)rectangulo.x + rectangulo.width, (double)rectangulo.y + rectangulo.height);
-            	Point center = new Point(rectangulo.x + (double)rectangulo.width/2, rectangulo.y + (double)rectangulo.height/2);
-            	
-            	Core.rectangle(mRgba, p1, p2, RECTANGLE_COLOR);
-            	Core.circle(mRgba, center, 3, RECTANGLE_COLOR); 
-            }
             
-            // aqui va el codigo donde envio datos a la arduino 
+            if(mCanDetector.getNumContours()>0){     
+            	// Marcar la lata mas cercana
+            	Point center = mCanDetector.getNearestCan(mRgba);
+            	Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
+            	
+            	// Clasificar el punto segun su posicion
+            	char pos= getPos(center);
+            	Log.i(TAG, "Posicion de la lata: " + pos);
+            	
+            	// Enviar informacion al arduino
+            }
+            // L
+            Point pt1= new Point(0,0);
+            Point pt2= new Point(mRgba.width()/4, mRgba.height());
+            Core.rectangle(mRgba, pt1, pt2, CAN_COLOR); 
+            // C
+            Point pt3= new Point(mRgba.width()/4,0);
+            Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
+            Core.rectangle(mRgba, pt3, pt4, SEA_COLOR);
+            // N
+            Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
+            Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
+            Core.rectangle(mRgba, pt5, pt6, CONT_COLOR);
+            // R
+            Point pt7= new Point((mRgba.width()/4)*3,0);
+            Point pt8= new Point(mRgba.width(), mRgba.height());
+            Core.rectangle(mRgba, pt7, pt8, CAN_COLOR);
             
             /*try {
             	sendData();
@@ -224,5 +267,95 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
         return mRgba;
     }
+
+    /* Devuelve el char que identifica la region 
+     *de la imagen en la que se encuentra el punto
+     */ 
+	private char getPos(Point center) {
+		if(isInL(center)){ 
+			return 'L';
+		}else if(isInR(center)){
+			return 'R';
+		}else if(isInC(center)){
+			return 'C';
+		}else if(isInN(center)){
+			return 'N';
+		}
+		return 0;
+	}
+
+	/* Verifica si el punto esta en la parte 
+	 * central baja de la imagen
+	 */
+	private boolean isInN(Point center) {
+		// Esquina superior izq de la region
+		Point p0= new Point();
+		p0.x= mRgba.width()/4;
+		p0.y= (mRgba.height()/4)*3;
+		
+		// Esquina inferior derecha de la region
+		Point p1= new Point(); 
+		p1.x= (mRgba.width()/4)*3;
+		p1.y= mRgba.height();
+		
+		return (p0.x <= center.x && center.x <= p1.x) &&
+				(p0.y <= center.y && center.y <= p1.y);
+	}
+
+	/* Verifica si el punto esta en la parte 
+	 * central alta de la imagen
+	 */
+	private boolean isInC(Point center) {
+		// Esquina superior izq de la region
+		Point p0= new Point();
+		p0.x= mRgba.width()/4;
+		p0.y= 0;
+				
+		// Esquina inferior derecha de la region
+		Point p1= new Point(); 
+		p1.x= (mRgba.width()/4)*3;
+		p1.y= (mRgba.height()/4)*3;
+		
+		return (p0.x <= center.x && center.x <= p1.x) &&
+				(p0.y <= center.y && center.y <= p1.y);
+	}
+
+	/* Verifica si el punto esta en la parte 
+	 * derecha de la imagen
+	 */
+	private boolean isInR(Point center) {
+		// Esquina superior izq de la region
+		Point p0= new Point();
+		p0.x= (mRgba.width()/4)*3;
+		p0.y= 0;
+						
+		// Esquina inferior derecha de la region
+		Point p1= new Point(); 
+		p1.x= mRgba.width();
+		p1.y= mRgba.height();
+				
+		return (p0.x <= center.x && center.x <= p1.x) &&
+				(p0.y <= center.y && center.y <= p1.y);
+	}
+
+	/* Verifica si el punto esta en la parte 
+	 * izquierda de la imagen
+	 */
+	private boolean isInL(Point center) {
+		// Esquina superior izq de la region
+		Point p0= new Point();
+		p0.x= 0;
+		p0.y= 0;
+						
+		// Esquina inferior derecha de la region
+		Point p1= new Point(); 
+		p1.x= mRgba.width()/4;
+		p1.y= mRgba.height();
+				
+		return (p0.x <= center.x && center.x <= p1.x) &&
+				(p0.y <= center.y && center.y <= p1.y);
+	}
+	
+	
 
 }

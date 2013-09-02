@@ -11,6 +11,8 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
@@ -167,6 +169,38 @@ public class ColorBlobDetector {
     		index++; 
     	}
     	return mContours.get(max_index); 
+    }
+    
+    /*
+     * Devuelve el punto central de la lata cuya posicion sea
+     * la mas baja en la imagen 
+     */
+    public Point getNearestCan(Mat mRgba){
+    	Iterator<MatOfPoint> contours = mContours.iterator();
+    	Point lowerCenter= new Point();
+    	double max_y= -1;
+
+    	while (contours.hasNext()){
+    		MatOfPoint contour= contours.next();
+    		
+    		// Sacar el rectangulo y su centro
+    		Rect rectangle = Imgproc.boundingRect(contour);           	
+        	double x_center = rectangle.x + rectangle.width/2;
+        	double y_center = rectangle.y + rectangle.height/2;
+        	
+        	Point center = new Point(x_center , y_center);
+        	
+        	// Quedarse con el mas bajo en la imagen
+        	if(center.y > max_y){
+        		max_y= center.y;
+        		lowerCenter= center;
+        	}
+        	// Solo para debugging
+        	Point p1 = new Point (rectangle.x,rectangle.y); 
+        	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
+        	Core.rectangle(mRgba,p1,p2,new Scalar(0, 255, 255, 0));
+    	}
+    	return lowerCenter;
     }
     
     // da el numero de contornos encontrados 

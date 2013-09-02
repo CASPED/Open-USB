@@ -12,5 +12,6 @@
     <string name="detectar">Detectar</string>
     <string name="title_activity_calibrate_see">CalibrateSeeActivity</string>
     <string name="hello_world">Hello world!</string>
+    <string name="driver">Driver</string>
 
 </resources>
