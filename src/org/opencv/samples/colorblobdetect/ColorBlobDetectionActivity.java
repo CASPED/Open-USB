@@ -54,7 +54,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private CameraBridgeViewBase mOpenCvCameraView;
     private TextView driverStatus;
     
-    // Para la comunicación serial con arduino
+    // Para la comunicacion serial con arduino
     // Manejador de dispositivos usb 
 	UsbManager manager;
 	// Dispositivo en uso o {@code null}
@@ -99,7 +99,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         mOpenCvCameraView.setCvCameraViewListener(this);
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
-        // Para la comunicación serial
+        // Para la comunicacion serial
         this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
         Log.i(TAG, "Despues de pedir driver");
         
@@ -138,7 +138,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
                     // Ignore.
                 }
                 sendDriver = null;
-                //return;
+                return;
             }
             //driverStatus.setText("Serial device: " + sendDriver);
         }
@@ -152,13 +152,12 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     // funcion para enviar datos a arduino por serial 
-    public void sendData() throws IOException {
+    public void sendData(char dataToSend) throws IOException {
     	    	
     	if(sendDriver != null) {
     		try{
     			// escribir bytes de datos 
-    			sendDriver.setBaudRate(115200);
-    			char dataToSend = '1';
+    			sendDriver.setBaudRate(9600);
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
     			sendDriver.write(byteToSend, 1000);
@@ -238,7 +237,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             	Log.i(TAG, "Posicion de la lata: " + pos);
             	
             	// Enviar informacion al arduino
+            	
+            	try {
+            		sendData(pos);
+            	} catch (IOException e) {
+            		// bla
+            	}
             }
+            
+            // Crear los cuadros de cada region (para debugging)
             // L
             Point pt1= new Point(0,0);
             Point pt2= new Point(mRgba.width()/4, mRgba.height());
@@ -273,13 +280,13 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
      */ 
 	private char getPos(Point center) {
 		if(isInL(center)){ 
-			return 'L';
+			return 'a';
 		}else if(isInR(center)){
-			return 'R';
+			return 'd';
 		}else if(isInC(center)){
-			return 'C';
+			return 'w';
 		}else if(isInN(center)){
-			return 'N';
+			return 'p';
 		}
 		return 0;
 	}
