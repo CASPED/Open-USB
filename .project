@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>OpenCV Sample - color-blob-detection</name>
+	<name>OpenUSB - color-blob-detection</name>
 	<comment></comment>
 	<projects>
 		<project>OpenCV Library - @OPENCV_VERSION@</project>
