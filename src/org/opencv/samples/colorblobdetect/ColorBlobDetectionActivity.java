@@ -43,6 +43,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private static final String  TAG              = "OCVSample::Activity";
 
     private boolean              mIsColorSelected = false;
+    private boolean              modoContenedor = false; 			
     private Mat                  mRgba;
   
     private ColorBlobDetector    mCanDetector;
@@ -289,51 +290,25 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mRgba = inputFrame.rgba();
     	  	
         if (mIsColorSelected) {
-        	// un detector para cada objeto 
-            mCanDetector.process(mRgba);
-            mSeaDetector.process(mRgba);
-            mContDetector.process(mRgba);
-            
-            
-            // arduino me dice que busque un contenedor
-        	try {
-        		if (readData() == 'h') {
-        			// encuentra el punto medio del contenedor y lo dibuja
-        			if(mContDetector.getNumContours()>0){
-        				Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
-        				Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
-        			}
-        		}
-        	} catch (IOException e) {
-        		// bla
-        	}
-                
-            // una lista de contornos para cada objeto 
-            //List<MatOfPoint> contoursCan = mCanDetector.getContours();          
-            List<MatOfPoint> contoursSea = mSeaDetector.getContours();
-            //List<MatOfPoint> contoursCont = mContDetector.getContours();
-
-            
-        	Iterator<MatOfPoint> contours = contoursSea.iterator();
-            
-        	// dibujar rectangulos del mar
-            while (contours.hasNext()){
-        		MatOfPoint contour= contours.next();
-            	Rect rectangle = Imgproc.boundingRect(contour); 
-            	Point p1 = new Point (rectangle.x,rectangle.y); 
-            	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
-            	Core.rectangle(mRgba,p1,p2,SEA_COLOR);
-            }
-            
-            
-            //Log.e(TAG, "Contours count: " + contours.size());
-            
-            // dibuja contornos
-            //Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
-            //Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
-            //Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
+        	
+        	// Prioridad: Verificar si estoy cerca del mar
+            mSeaDetector.process(mRgba);       
             
             if(mSeaDetector.getNumContours()>0){
+            	
+            	List<MatOfPoint> contoursSea = mSeaDetector.getContours();
+            	Iterator<MatOfPoint> contours = contoursSea.iterator();
+                
+            	// dibujar rectangulos del mar
+                while (contours.hasNext()){
+            		MatOfPoint contour= contours.next();
+                	Rect rectangle = Imgproc.boundingRect(contour); 
+                	Point p1 = new Point (rectangle.x,rectangle.y); 
+                	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
+                	Core.rectangle(mRgba,p1,p2,SEA_COLOR);
+                }
+            	
+                // Si el mar esta cerca enviar 's' al arduino
             	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
             	if(lowest_sea > (mRgba.height()/8)*7){
             		try {
@@ -344,24 +319,50 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             	}
             	return mRgba;
             }
+            
+            // arduino me dice que busque un contenedor ?
+        	try {
+        		if (readData() == 'h') {
+        			modoContenedor = true;
+        		}
+        	} catch (IOException e) {
+        		// bla
+        	}
+        	
+        	if(modoContenedor){
+        		mContDetector.process(mRgba);
+    			
+    			// encuentra el punto medio del contenedor y lo dibuja
+    			if(mContDetector.getNumContours()>0){
+    				Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+    				Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
+    			}
+    			// 
+        	}else{
              
-            if(mCanDetector.getNumContours()>0){     
-            	// Marcar la lata mas cercana
-            	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
-            	Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
-            	
-            	// Clasificar el punto segun su posicion
-            	char pos= getPos(center);
-            	Log.i(TAG, "Posicion de la lata: " + pos);
-            	
-            	// Enviar informacion al arduino
-            	
-            	try {
-            		sendData(pos);
-            	} catch (IOException e) {
-            		// bla
-            	}
-            }
+	        	mCanDetector.process(mRgba);
+	            if(mCanDetector.getNumContours()>0){     
+	            	// Marcar la lata mas cercana
+	            	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+	            	Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
+	            	
+	            	// Clasificar el punto segun su posicion
+	            	char pos= getPos(center);
+	            	Log.i(TAG, "Posicion de la lata: " + pos);
+	            	
+	            	// Enviar informacion al arduino
+	            	
+	            	try {
+	            		sendData(pos);
+	            	} catch (IOException e) {
+	            		// bla
+	            	}
+	            }
+        	}
+            // dibuja contornos
+            //Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
+            //Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
+            //Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
             // Crear los cuadros de cada region (para debugging)
             // L izquierda
@@ -381,14 +382,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             Point pt8= new Point(mRgba.width(), mRgba.height());
             Core.rectangle(mRgba, pt7, pt8, WHITE);
             
-            /*try {
-            	sendData();
-            } catch (IOException e) {
-            	// bla
-            }*/
             //android.os.Process.killProcess(android.os.Process.myPid());
         }
-        
 
         return mRgba;
     }
