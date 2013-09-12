@@ -30,7 +30,7 @@ import android.view.View.OnTouchListener;
 
 public class CalibrateActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
 	
-		private static final String  TAG              = "OCVSample::Activity";
+		private static final String  TAG = "OCVSample::Activity";
 
 	    private boolean              mIsColorSelected = false;
 	    private Mat                  mRgba;

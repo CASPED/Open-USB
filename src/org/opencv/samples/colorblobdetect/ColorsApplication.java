@@ -15,6 +15,12 @@ public class ColorsApplication extends Application {
 	private boolean seaColorSelected = false;
 	private boolean contColorSelected = false;
 	
+	public void init(){
+		this.avgCanColor = new Scalar(0,0,0,0);
+		this.avgSeaColor = new Scalar(0,0,0,0);
+		this.avgContColor = new Scalar(0,0,0,0);
+	}
+	
 	public Scalar getSeaColor() {
 		return avgSeaColor;
 	}

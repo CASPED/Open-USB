@@ -177,8 +177,8 @@ public class ColorBlobDetector {
      */
     public Point getNearestCan(Mat mRgba){
     	Iterator<MatOfPoint> contours = mContours.iterator();
-    	Point lowerCenter= new Point();
     	double max_y= -1;
+    	double x=0;
 
     	while (contours.hasNext()){
     		MatOfPoint contour= contours.next();
@@ -188,19 +188,43 @@ public class ColorBlobDetector {
         	double x_center = rectangle.x + rectangle.width/2;
         	double y_center = rectangle.y + rectangle.height/2;
         	
-        	Point center = new Point(x_center , y_center);
-        	
         	// Quedarse con el mas bajo en la imagen
-        	if(center.y > max_y){
-        		max_y= center.y;
-        		lowerCenter= center;
+        	if(y_center > max_y){
+        		max_y= y_center;
+        		x= x_center;
         	}
         	// Solo para debugging
         	Point p1 = new Point (rectangle.x,rectangle.y); 
         	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
         	Core.rectangle(mRgba,p1,p2,new Scalar(0, 255, 255, 0));
     	}
+    	Point lowerCenter = new Point(x , max_y);
     	return lowerCenter;
+    }
+    
+    public double getLowestPointSea(Mat mRgba){
+    	Iterator<MatOfPoint> contours = mContours.iterator();
+    	double max_y= -1;
+    	double x= 0;
+
+    	while (contours.hasNext()){
+    		MatOfPoint contour= contours.next();
+    		
+    		// Sacar el rectangulo y el punto mas bajo
+    		Rect rectangle = Imgproc.boundingRect(contour);           	
+        	double y_r = rectangle.y + rectangle.height;
+        	double x_r= rectangle.x + rectangle.width/2;
+        			
+        	// Quedarse con el mas bajo en la imagen
+        	if(y_r > max_y){
+        		max_y= y_r;
+        		x= x_r;
+        	}
+    	}
+    	
+    	Core.circle(mRgba, new Point(x,max_y), 3, new Scalar(255,0,0,255));
+    	
+    	return max_y;
     }
     
     // da el numero de contornos encontrados 

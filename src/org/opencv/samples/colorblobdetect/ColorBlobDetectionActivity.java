@@ -34,6 +34,7 @@ import android.view.View.OnTouchListener;
 import android.widget.TextView;
 import android.hardware.usb.UsbManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 
 
 
@@ -60,6 +61,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	// Dispositivo en uso o {@code null}
 	UsbSerialDriver sendDriver;
     
+	public static final String PREFS_NAME = "colors"; 
 
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -103,6 +105,26 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
         Log.i(TAG, "Despues de pedir driver");
         
+        // Para guardar los valores calibrados
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        
+        if (!((ColorsApplication)getApplication()).areAllSelected()){
+	        float can_H = settings.getFloat("can_H", 0);
+	        float can_S = settings.getFloat("can_S", 0);
+	        float can_V = settings.getFloat("can_V", 0);
+	        
+	        float sea_H = settings.getFloat("sea_H", 0);
+	        float sea_S = settings.getFloat("sea_S", 0);
+	        float sea_V = settings.getFloat("sea_V", 0);
+	        
+	        float cont_H = settings.getFloat("cont_H", 0);
+	        float cont_S = settings.getFloat("cont_S", 0);
+	        float cont_V = settings.getFloat("cont_V", 0);
+	        
+	        ((ColorsApplication)getApplication()).setCanColor(new Scalar(can_H,can_S,can_V,255));
+	        ((ColorsApplication)getApplication()).setSeaColor(new Scalar(sea_H,sea_S,sea_V,255));
+	        ((ColorsApplication)getApplication()).setContColor(new Scalar(cont_H,cont_S,cont_V,255));
+        }
     }
 
     @Override
@@ -142,6 +164,30 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             }
             //driverStatus.setText("Serial device: " + sendDriver);
         }
+    }
+    
+    public void onStop(){
+    	super.onStop();
+    	SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+    	SharedPreferences.Editor editor = settings.edit();
+    	
+    	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
+		Scalar hsvSeaColor=((ColorsApplication)getApplication()).getSeaColor();
+	    Scalar hsvContColor=((ColorsApplication)getApplication()).getContColor();
+	    
+    	editor.putFloat("can_H", (float) hsvCanColor.val[0]);
+        editor.putFloat("can_S", (float)hsvCanColor.val[1]);
+        editor.putFloat("can_V", (float)hsvCanColor.val[2]);
+         
+        editor.putFloat("sea_H", (float)hsvSeaColor.val[0]);
+        editor.putFloat("sea_S", (float)hsvSeaColor.val[1]);
+        editor.putFloat("sea_V", (float)hsvSeaColor.val[2]);
+        
+        editor.putFloat("cont_H", (float)hsvContColor.val[0]);
+        editor.putFloat("cont_S", (float)hsvContColor.val[1]);
+        editor.putFloat("cont_V", (float)hsvContColor.val[2]);
+        
+        editor.commit();
     }
 
     public void onDestroy() {
@@ -186,20 +232,19 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     public boolean onTouch(View v, MotionEvent event){
-    	// ejecutar solo si ya calibre todo
-    	if( ((ColorsApplication)getApplication()).areAllSelected() ) {
-    		// obtener los valores globales seleccionados al calibrar
-	    	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
-	    	Scalar hsvSeaColor=((ColorsApplication)getApplication()).getSeaColor();
-	    	Scalar hsvContColor=((ColorsApplication)getApplication()).getContColor();
+    	
+    	// obtener los valores globales seleccionados al calibrar
+    	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
+		Scalar hsvSeaColor=((ColorsApplication)getApplication()).getSeaColor();
+	    Scalar hsvContColor=((ColorsApplication)getApplication()).getContColor();
 	    	
-	    	//inicializar el color promedio en cada detector 
-	    	mCanDetector.setHsvColor(hsvCanColor);
-	    	mSeaDetector.setHsvColor(hsvSeaColor);
-	    	mContDetector.setHsvColor(hsvContColor);
-	    	
-	        mIsColorSelected = true;    	
-    	}
+	    //inicializar el color promedio en cada detector 
+	    mCanDetector.setHsvColor(hsvCanColor);
+	    mSeaDetector.setHsvColor(hsvSeaColor);
+	    mContDetector.setHsvColor(hsvContColor);
+	    
+	    mIsColorSelected = true;    	
+    	
     	return false;
     }
 
@@ -226,7 +271,18 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
             Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
-            
+            if(mSeaDetector.getNumContours()>0){
+            	double lowest_sea= mCanDetector.getLowestPointSea(mRgba);
+            	if(lowest_sea > (mRgba.height()/4)*3){
+            		try {
+                		sendData('s');
+                	} catch (IOException e) {
+                		// bla
+                	}
+            	}
+            	return mRgba;
+            }
+             
             if(mCanDetector.getNumContours()>0){     
             	// Marcar la lata mas cercana
             	Point center = mCanDetector.getNearestCan(mRgba);
@@ -246,19 +302,19 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             }
             
             // Crear los cuadros de cada region (para debugging)
-            // L
+            // L izquierda
             Point pt1= new Point(0,0);
             Point pt2= new Point(mRgba.width()/4, mRgba.height());
             Core.rectangle(mRgba, pt1, pt2, CAN_COLOR); 
-            // C
+            // C centro-arriba
             Point pt3= new Point(mRgba.width()/4,0);
             Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
             Core.rectangle(mRgba, pt3, pt4, SEA_COLOR);
-            // N
+            // N centro-abajo
             Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
             Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
             Core.rectangle(mRgba, pt5, pt6, CONT_COLOR);
-            // R
+            // R derecha
             Point pt7= new Point((mRgba.width()/4)*3,0);
             Point pt8= new Point(mRgba.width(), mRgba.height());
             Core.rectangle(mRgba, pt7, pt8, CAN_COLOR);
