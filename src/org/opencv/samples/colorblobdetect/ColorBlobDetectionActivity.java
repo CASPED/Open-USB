@@ -1,5 +1,6 @@
 package org.opencv.samples.colorblobdetect;
 
+import java.util.Iterator;
 import java.util.List;
 import java.io.IOException;
 
@@ -51,6 +52,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar               SEA_COLOR;
     private Scalar               CONT_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
+    private Scalar				 WHITE; 
     
     private CameraBridgeViewBase mOpenCvCameraView;
     private TextView driverStatus;
@@ -60,6 +62,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	UsbManager manager;
 	// Dispositivo en uso o {@code null}
 	UsbSerialDriver sendDriver;
+	UsbSerialDriver readDriver; 
     
 	public static final String PREFS_NAME = "colors"; 
 
@@ -144,16 +147,17 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         Log.i(TAG, "called onResume");
         // Obtener el driver para poder enviar datos al arduino 
         this.sendDriver = UsbSerialProber.acquire(this.manager);
+        this.readDriver = UsbSerialProber.acquire(this.manager);
         Log.i(TAG, "Resumed, sendDriver=" + sendDriver);
+        Log.i(TAG, "Resumed, readDriver=" + readDriver);
+        // manejo del driver para escribir
         if (sendDriver == null) {
-        	Log.i(TAG, "Informar que no se encontró dispositivo");
-        	//driverStatus.setText("No serial device.");
+        	Log.i(TAG, "No se encontro dispositivo");
         } else {
             try {
             	sendDriver.open();
             } catch (IOException e) {
                 Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
-                driverStatus.setText("Error al conectar con dispositivo: " + e.getMessage());
                 try {
                     sendDriver.close();
                 } catch (IOException e2) {
@@ -162,7 +166,23 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
                 sendDriver = null;
                 return;
             }
-            //driverStatus.setText("Serial device: " + sendDriver);
+        }
+        // manejo del driver para leer
+        if (readDriver == null) {
+        	Log.i(TAG, "No se encontro dispositivo");
+        } else {
+            try {
+            	readDriver.open();
+            } catch (IOException e) {
+                Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
+                try {
+                    readDriver.close();
+                } catch (IOException e2) {
+                    // Ignore.
+                }
+                readDriver = null;
+                return;
+            }
         }
     }
     
@@ -213,6 +233,21 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	}
         
     }
+    
+    // funcion para recibir datos de arduino por serial 
+    public char readData() throws IOException {
+    	if (readDriver != null) {
+    		try {
+	    		readDriver.setBaudRate(9600);
+	    		byte [] buffer = new byte[1];
+	    		readDriver.read(buffer, 1000); 
+	    		return (char)buffer[0];
+	    	} catch (IOException e) {
+	    		// bla
+	    	}
+    	}
+    	return '0'; 
+    }
 
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
@@ -224,6 +259,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         SEA_COLOR = new Scalar(145,245,51,0);
         CONT_COLOR = new Scalar(245,245,51,0);
         RECTANGLE_COLOR = new Scalar(0, 255, 255, 0);
+        WHITE = new Scalar(255, 255, 255, 0); 
                 
     }
 
@@ -250,30 +286,56 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-    	
-        mRgba = inputFrame.rgba();
-
+    	mRgba = inputFrame.rgba();
+    	  	
         if (mIsColorSelected) {
         	// un detector para cada objeto 
             mCanDetector.process(mRgba);
             mSeaDetector.process(mRgba);
             mContDetector.process(mRgba);
             
+            
+            // arduino me dice que busque un contenedor
+        	try {
+        		if (readData() == 'h') {
+        			// encuentra el punto medio del contenedor y lo dibuja
+        			if(mContDetector.getNumContours()>0){
+        				Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+        				Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
+        			}
+        		}
+        	} catch (IOException e) {
+        		// bla
+        	}
+                
             // una lista de contornos para cada objeto 
-            List<MatOfPoint> contoursCan = mCanDetector.getContours();
+            //List<MatOfPoint> contoursCan = mCanDetector.getContours();          
             List<MatOfPoint> contoursSea = mSeaDetector.getContours();
-            List<MatOfPoint> contoursCont = mContDetector.getContours();
+            //List<MatOfPoint> contoursCont = mContDetector.getContours();
+
+            
+        	Iterator<MatOfPoint> contours = contoursSea.iterator();
+            
+        	// dibujar rectangulos del mar
+            while (contours.hasNext()){
+        		MatOfPoint contour= contours.next();
+            	Rect rectangle = Imgproc.boundingRect(contour); 
+            	Point p1 = new Point (rectangle.x,rectangle.y); 
+            	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
+            	Core.rectangle(mRgba,p1,p2,SEA_COLOR);
+            }
+            
             
             //Log.e(TAG, "Contours count: " + contours.size());
             
             // dibuja contornos
-            Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
-            Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
-            Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
+            //Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
+            //Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
+            //Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
             
             if(mSeaDetector.getNumContours()>0){
-            	double lowest_sea= mCanDetector.getLowestPointSea(mRgba);
-            	if(lowest_sea > (mRgba.height()/4)*3){
+            	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
+            	if(lowest_sea > (mRgba.height()/8)*7){
             		try {
                 		sendData('s');
                 	} catch (IOException e) {
@@ -285,7 +347,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
              
             if(mCanDetector.getNumContours()>0){     
             	// Marcar la lata mas cercana
-            	Point center = mCanDetector.getNearestCan(mRgba);
+            	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
             	Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
             	
             	// Clasificar el punto segun su posicion
@@ -305,19 +367,19 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             // L izquierda
             Point pt1= new Point(0,0);
             Point pt2= new Point(mRgba.width()/4, mRgba.height());
-            Core.rectangle(mRgba, pt1, pt2, CAN_COLOR); 
+            Core.rectangle(mRgba, pt1, pt2, WHITE); 
             // C centro-arriba
             Point pt3= new Point(mRgba.width()/4,0);
             Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
-            Core.rectangle(mRgba, pt3, pt4, SEA_COLOR);
+            Core.rectangle(mRgba, pt3, pt4, WHITE);
             // N centro-abajo
             Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
             Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
-            Core.rectangle(mRgba, pt5, pt6, CONT_COLOR);
+            Core.rectangle(mRgba, pt5, pt6, WHITE);
             // R derecha
             Point pt7= new Point((mRgba.width()/4)*3,0);
             Point pt8= new Point(mRgba.width(), mRgba.height());
-            Core.rectangle(mRgba, pt7, pt8, CAN_COLOR);
+            Core.rectangle(mRgba, pt7, pt8, WHITE);
             
             /*try {
             	sendData();

@@ -175,7 +175,7 @@ public class ColorBlobDetector {
      * Devuelve el punto central de la lata cuya posicion sea
      * la mas baja en la imagen 
      */
-    public Point getNearestCan(Mat mRgba){
+    public Point getNearestObject(Mat mRgba, Scalar COLOR){
     	Iterator<MatOfPoint> contours = mContours.iterator();
     	double max_y= -1;
     	double x=0;
@@ -196,7 +196,7 @@ public class ColorBlobDetector {
         	// Solo para debugging
         	Point p1 = new Point (rectangle.x,rectangle.y); 
         	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
-        	Core.rectangle(mRgba,p1,p2,new Scalar(0, 255, 255, 0));
+        	Core.rectangle(mRgba,p1,p2, COLOR);
     	}
     	Point lowerCenter = new Point(x , max_y);
     	return lowerCenter;
