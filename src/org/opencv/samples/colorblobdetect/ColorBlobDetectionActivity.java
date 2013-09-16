@@ -148,7 +148,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         Log.i(TAG, "called onResume");
         // Obtener el driver para poder enviar datos al arduino 
         this.sendDriver = UsbSerialProber.acquire(this.manager);
-        this.readDriver = UsbSerialProber.acquire(this.manager);
+
         Log.i(TAG, "Resumed, sendDriver=" + sendDriver);
         Log.i(TAG, "Resumed, readDriver=" + readDriver);
         // manejo del driver para escribir
@@ -168,23 +168,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
                 return;
             }
         }
-        // manejo del driver para leer
-        if (readDriver == null) {
-        	Log.i(TAG, "No se encontro dispositivo");
-        } else {
-            try {
-            	readDriver.open();
-            } catch (IOException e) {
-                Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
-                try {
-                    readDriver.close();
-                } catch (IOException e2) {
-                    // Ignore.
-                }
-                readDriver = null;
-                return;
-            }
-        }
+        
     }
     
     public void onStop(){
@@ -237,11 +221,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     // funcion para recibir datos de arduino por serial 
     public char readData() throws IOException {
-    	if (readDriver != null) {
+    	if (sendDriver != null) {
     		try {
-	    		readDriver.setBaudRate(9600);
+	    		sendDriver.setBaudRate(9600);
 	    		byte [] buffer = new byte[1];
-	    		readDriver.read(buffer, 1000); 
+	    		sendDriver.read(buffer, 1000); 
 	    		return (char)buffer[0];
 	    	} catch (IOException e) {
 	    		// bla
@@ -316,8 +300,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
                 	} catch (IOException e) {
                 		// bla
                 	}
+            		return mRgba;
             	}
-            	return mRgba;
             }
             
             // arduino me dice que busque un contenedor ?
