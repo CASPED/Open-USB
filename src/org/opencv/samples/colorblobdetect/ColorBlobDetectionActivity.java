@@ -103,6 +103,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         // inicia camara 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        mOpenCvCameraView.enableFpsMeter();
+        mOpenCvCameraView.setMaxFrameSize(400, 400);
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
         // Para la comunicacion serial
