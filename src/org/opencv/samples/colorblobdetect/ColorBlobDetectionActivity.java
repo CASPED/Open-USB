@@ -275,36 +275,10 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	  	
         if (mIsColorSelected) {
         	
-        	// Prioridad: Verificar si estoy cerca del mar
-            mSeaDetector.process(mRgba);       
-            
-            if(mSeaDetector.getNumContours()>0){
-            	
-            	List<MatOfPoint> contoursSea = mSeaDetector.getContours();
-            	Iterator<MatOfPoint> contours = contoursSea.iterator();
-                
-            	// dibujar rectangulos del mar
-                while (contours.hasNext()){
-            		MatOfPoint contour= contours.next();
-                	Rect rectangle = Imgproc.boundingRect(contour); 
-                	Point p1 = new Point (rectangle.x,rectangle.y); 
-                	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
-                	Core.rectangle(mRgba,p1,p2,SEA_COLOR);
-                }
-            	
-                // Si el mar esta cerca enviar 's' al arduino
-            	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
-            	if(lowest_sea > (mRgba.height()/8)*7){
-            		try {
-                		sendData('s');
-                	} catch (IOException e) {
-                		// bla
-                	}
-            		return mRgba;
-            	}
-            }
-            
-            // arduino me dice que busque un contenedor ?
+        	if (evitarMar()) {
+        		return mRgba; 
+        	}
+            // leer de arduino a ver si debo buscar contenedor 
         	try {
         		if (readData() == 'h') {
         			modoContenedor = true;
@@ -313,63 +287,93 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         		// bla
         	}
         	
-        	if(modoContenedor){
-        		mContDetector.process(mRgba);
-    			
-    			// encuentra el punto medio del contenedor y lo dibuja
-    			if(mContDetector.getNumContours()>0){
-    				Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
-    				Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
-    			}
-    			// 
-        	}else{
-             
-	        	mCanDetector.process(mRgba);
-	            if(mCanDetector.getNumContours()>0){     
-	            	// Marcar la lata mas cercana
-	            	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
-	            	Core.circle(mRgba, center, 3, RECTANGLE_COLOR);
-	            	
-	            	// Clasificar el punto segun su posicion
-	            	char pos= getPos(center);
-	            	Log.i(TAG, "Posicion de la lata: " + pos);
-	            	
-	            	// Enviar informacion al arduino
-	            	
-	            	try {
-	            		sendData(pos);
-	            	} catch (IOException e) {
-	            		// bla
-	            	}
-	            }
+        	if (modoContenedor) {
+        		buscarContenedor();
+        	} else {
+        		buscarLatas();
         	}
-            // dibuja contornos
-            //Imgproc.drawContours(mRgba, contoursCan, -1, CAN_COLOR);
-            //Imgproc.drawContours(mRgba, contoursSea, -1, SEA_COLOR);
-            //Imgproc.drawContours(mRgba, contoursCont, -1, CONT_COLOR);
-            
-            // Crear los cuadros de cada region (para debugging)
-            // L izquierda
-            Point pt1= new Point(0,0);
-            Point pt2= new Point(mRgba.width()/4, mRgba.height());
-            Core.rectangle(mRgba, pt1, pt2, WHITE); 
-            // C centro-arriba
-            Point pt3= new Point(mRgba.width()/4,0);
-            Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
-            Core.rectangle(mRgba, pt3, pt4, WHITE);
-            // N centro-abajo
-            Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
-            Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
-            Core.rectangle(mRgba, pt5, pt6, WHITE);
-            // R derecha
-            Point pt7= new Point((mRgba.width()/4)*3,0);
-            Point pt8= new Point(mRgba.width(), mRgba.height());
-            Core.rectangle(mRgba, pt7, pt8, WHITE);
-            
+                  
+        	dibujarRegiones(); 
+                  
             //android.os.Process.killProcess(android.os.Process.myPid());
         }
 
         return mRgba;
+    }
+    
+    private void buscarLatas() {
+    	mCanDetector.process(mRgba);
+    	// si veo latas 
+        if(mCanDetector.getNumContours()>0){     
+        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);       	
+        	char pos= getPos(center);
+        	Log.i(TAG, "Posicion de la lata: " + pos);       	
+        	// Enviar informacion al arduino
+        	try {
+        		sendData(pos);
+        	} catch (IOException e) {
+        		// bla
+        	}
+        // si no veo latas 
+        } else {
+        	try {
+        		sendData('d');
+        	} catch (IOException e) {
+        		// bla
+        	}
+        }
+    }
+    
+    private void buscarContenedor() {
+    	mContDetector.process(mRgba);
+		
+		// encuentra el punto medio del contenedor y lo dibuja
+		if(mContDetector.getNumContours()>0){
+			Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+		}
+		//falta enviar posicion del contenedor al arduino		
+    }
+    
+    private boolean evitarMar() {
+        mSeaDetector.process(mRgba);       
+        
+        if(mSeaDetector.getNumContours()>0){
+        	
+        	mSeaDetector.drawRectangles(mRgba, SEA_COLOR);
+        	
+            // Si el mar esta cerca enviar 's' al arduino
+        	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
+        	if(lowest_sea > (mRgba.height()/8)*7){
+        		try {
+            		sendData('s');
+            	} catch (IOException e) {
+            		// bla
+            	}
+        		return true;
+        	}
+        }
+        
+        return false;
+    }
+    
+    public void dibujarRegiones() {
+    	// **** Crear los cuadros de cada region (para debugging) ***
+        // L izquierda
+        Point pt1= new Point(0,0);
+        Point pt2= new Point(mRgba.width()/4, mRgba.height());
+        Core.rectangle(mRgba, pt1, pt2, WHITE); 
+        // C centro-arriba
+        Point pt3= new Point(mRgba.width()/4,0);
+        Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
+        Core.rectangle(mRgba, pt3, pt4, WHITE);
+        // N centro-abajo
+        Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
+        Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
+        Core.rectangle(mRgba, pt5, pt6, WHITE);
+        // R derecha
+        Point pt7= new Point((mRgba.width()/4)*3,0);
+        Point pt8= new Point(mRgba.width(), mRgba.height());
+        Core.rectangle(mRgba, pt7, pt8, WHITE);
     }
 
     /* Devuelve el char que identifica la region 

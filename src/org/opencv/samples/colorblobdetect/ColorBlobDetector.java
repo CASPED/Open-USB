@@ -199,6 +199,7 @@ public class ColorBlobDetector {
         	Core.rectangle(mRgba,p1,p2, COLOR);
     	}
     	Point lowerCenter = new Point(x , max_y);
+    	Core.circle(mRgba, lowerCenter, 3, COLOR);
     	return lowerCenter;
     }
     
@@ -222,9 +223,21 @@ public class ColorBlobDetector {
         	}
     	}
     	
-    	Core.circle(mRgba, new Point(x,max_y), 3, new Scalar(255,0,0,255));
-    	
+    	Core.circle(mRgba, new Point(x,max_y), 3, new Scalar(255,0,0,255));	
     	return max_y;
+    }
+    
+    public void drawRectangles(Mat mRgba, Scalar COLOR) {
+    	Iterator<MatOfPoint> contours = mContours.iterator();
+    	
+    	 while (contours.hasNext()){
+     		MatOfPoint contour= contours.next();
+         	Rect rectangle = Imgproc.boundingRect(contour); 
+         	Point p1 = new Point (rectangle.x,rectangle.y); 
+         	Point p2 = new Point (rectangle.x+rectangle.width, rectangle.y + rectangle.height);
+         	Core.rectangle(mRgba,p1,p2,COLOR);
+         }
+     	
     }
     
     // da el numero de contornos encontrados 
