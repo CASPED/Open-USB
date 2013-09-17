@@ -103,6 +103,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         // inicia camara 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
+        mOpenCvCameraView.enableFpsMeter();
+        mOpenCvCameraView.setMaxFrameSize(400, 400);
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
         // Para la comunicacion serial
@@ -305,7 +307,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mCanDetector.process(mRgba);
     	// si veo latas 
         if(mCanDetector.getNumContours()>0){     
-        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);       	
+        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+        	center.y = mCanDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center);
         	Log.i(TAG, "Posicion de la lata: " + pos);       	
         	// Enviar informacion al arduino
