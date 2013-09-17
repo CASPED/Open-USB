@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html class="no-js">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Debug Http</title>
+        <meta name="description" content="USB Robot debug web page">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="shortcut icon" href="icon.ico">
+
+        <link rel="stylesheet" href="graphics/main.css">
+    </head>
+    <body>
+
+        <div id="page"></div>
+
+        <script src="logic/libs/require.js"></script>
+        <!--script src="logic/libs/jquery.js"></script>
+        <script src="logic/libs/can.jquery.js"></script-->
+        <script type="text/javascript">
+            require.config({
+                baseUrl: "logic/",
+                paths : {
+                    "graphics"  : "../graphics",
+                    "jquery"    : "libs/jquery",
+                    "can"       : "libs/amd/can",
+                    "socketio"  : "/socket.io/socket.io"
+                },
+                shim: {
+                    'socketio': {
+                        exports: 'io'
+                    }
+                },
+            });
+            require(['main']);
+
+            //Global variable.
+            G = null;
+        </script>
+    </body>
+</html>

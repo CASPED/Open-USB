@@ -1,0 +1,135 @@
+/**************   MAIN   **************/
+#page {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(56, 56, 56);
+}
+
+
+
+/*** PAGE ***/
+.output {
+    background: rgb(15, 15, 15);
+    color: rgb(190, 190, 190);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    min-width: 300px;
+    width: 100%;
+    border-right: 2px solid rgb(92, 92, 92);
+    overflow-y: hidden;
+}
+
+.output h1 {
+    text-align: center;
+    
+    line-height: 0;
+    color: rgb(121, 104, 50);
+}
+
+.output ul {
+    position: absolute;
+    top: 40px;
+    bottom: 0;
+    right: 0;
+    left: -10px;
+    overflow-y: auto;
+    
+    overflow-x: hidden;
+    list-style-type: square;
+}
+
+.output li {}
+
+.output li.error {
+    color: rgb(175, 0, 0);
+}
+
+/************** CONTROLS **************/
+#controls {
+    position: relative;
+    z-index: 2;
+    background: black;
+    color: white;
+    padding: 5px;
+    margin-top: -30px;
+    opacity: 0.7;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.33);
+}
+
+#controls:hover {
+    opacity: 1;
+    margin-top: 0px;
+}
+
+#controls .label {
+    position: absolute;
+    background-color: black;
+    padding: 5px 5px 5px 5px;
+    margin-left: 5px;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.82);
+}
+
+#controls .divisor {
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+}
+
+
+
+
+
+/**************  LOADER  **************/
+
+#movingBallG{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-top: -10px;
+    margin-left: -128px;
+}
+
+.movingBallLineG{
+    position: absolute;
+    left: 0px;
+    top: 8px;
+    height: 4px;
+    width: 256px;
+    border-radius: 5px;
+    background-color: white;
+}
+
+.movingBallG{
+    background-color: white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    -webkit-border-radius: 10px;
+    -webkit-animation-name: bounce_movingBallG;
+    -webkit-animation-duration: 0.8s;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-direction: linear;
+}
+
+@-webkit-keyframes bounce_movingBallG{
+    0%{
+        left: 0px;
+    }
+
+    50%{
+        left: 236px;
+    }
+
+    100%{
+        left: 0px;
+    }
+
+}
+
