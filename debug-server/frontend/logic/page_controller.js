@@ -1,5 +1,10 @@
-define(['can/view/ejs', 'can/control', 'can/observe', 'can/util/library'],
-    function(can) {
+define([
+    'visor',
+    'can/view/ejs',
+    'can/control',
+    'can/observe',
+    'can/util/library',
+], function(Visor, can) {
 // Using ECMAScript 5 strict mode during development By default r.js will ignore that.
 "use strict";
 
@@ -13,6 +18,7 @@ var PageController = can.Control(
 
 },{
     state: null,
+    visor: null,
 
     init: function(el, options) {},
 
@@ -21,10 +27,17 @@ var PageController = can.Control(
         this.element.html( can.view('graphics/page.ejs', {}) );
 
         this.dom = {
-            out_text: this.element.find(".output .text")
+            output: this.element.find(".output"),
+            out_text: this.element.find(".output .text"),
+            visor   : this.element.find(".visor")
         };
 
         G.socket.on('trace', $.proxy(this.onTrace, this));
+
+        this.visor = new Visor(this.dom.visor);
+        this.visor.start();
+
+        //this.dom.output.addClass("folded");
     },
 
     onTrace: function(data) {

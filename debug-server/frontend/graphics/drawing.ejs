@@ -1,0 +1,12 @@
+
+<% for(i in shapes) {%> 
+    <div class="shape <%= figure %> <%= shapes[i].color %>"
+         style="{
+                    width : <%=shapes[i].width%>;
+                    height: <%=shapes[i].height%>;
+                    left  : <%=shapes[i].x%>;
+                    top   : <%=shapes[i].y%>;
+                }"
+        >
+    </div>
+<% } %>

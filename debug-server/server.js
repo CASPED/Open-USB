@@ -30,9 +30,17 @@ app.get('/', function (req, res) {
 
 app.post('/trace', function (req, res) {
     var msgObj = {};
-    console.log(req.body)
+    console.log(req.body);
     msgObj[req.body.action] = req.body.msg;
     io.sockets.emit('trace', msgObj);
+    res.send(200);
+});
+
+app.post('/draw', function (req, res) {
+    var msgObj = {};
+    console.log(req.body);
+    msgObj[req.body.action] = req.body.msg;
+    io.sockets.emit('draw', msgObj);
     res.send(200);
 });
 
