@@ -49,6 +49,9 @@ var PageController = can.Control(
                 can.view('graphics/trace.ejs', {"msg": data[action], "action": action})
             );
         });
+
+        self.dom.out_text.stop(true, false);
+        self.dom.out_text.animate({scrollTop: self.dom.out_text[0].scrollHeight}, {duration: 200, queue: false});
         
     },
 
