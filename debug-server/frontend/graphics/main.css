@@ -12,14 +12,14 @@
 
 /*** PAGE ***/
 .output {
-    background: rgb(15, 15, 15);
+    background: rgb(24, 24, 24);
     color: rgb(190, 190, 190);
     position: absolute;
     top: 0;
     bottom: 0;
     min-width: 300px;
     width: 100%;
-    border-right: 2px solid rgb(92, 92, 92);
+    /*border-right: 2px solid rgb(92, 92, 92);*/
     overflow-y: hidden;
 }
 
@@ -44,8 +44,30 @@
 
 .output li {}
 
+.output li.out {}
+
+.output li.chat {
+    color: rgb(0, 243, 0);
+}
+
+.output li.server {
+    color: rgb(68, 165, 255);
+}
 .output li.error {
     color: rgb(175, 0, 0);
+}
+
+.output input {
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    border: 0;
+    margin: 0;
+    padding: 5px;
+    color: rgb(0, 243, 0);
+    background-color: rgb(15, 15, 15);
+    box-shadow: -5px 0 8px black;
 }
 
 /************** CONTROLS **************/

@@ -7,18 +7,12 @@ require([
 // Using ECMAScript 5 strict mode during development By default r.js will ignore that.
 "use strict";
 
-
-var socket = io.connect();
-
-socket.on('news', function (data) {
-    console.log(data);
-    socket.emit('my other event', { my: 'data' });
-});
-
-
 G = {
+    socket: io.connect(),
     pageController: new PageController( '#page' )
 };
+
+G.pageController.start();
 
 /*require([
     'scenes/scene_0',
