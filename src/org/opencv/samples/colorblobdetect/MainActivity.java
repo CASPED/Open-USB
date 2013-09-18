@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 		/** Aquí se inicializa el debugger de http, en el parametro hay que poner el IP del
 		 * servidor.
 		 */
-		http_print = new HTTPrint("http://192.168.0.199");
+		http_print = new HTTPrint("http://192.168.0.105");
 		//Cada print debería enviarse al servidor:
 		System.out.print("Planificador incializado.");
 		
@@ -29,7 +29,8 @@ public class MainActivity extends Activity {
 		Button calibrarLata = (Button) findViewById(R.id.buttonCalibrarLatas);
         calibrarLata.setOnClickListener(new View.OnClickListener() {
         	// si hago click, redireccionar a la actividad
-            public void onClick(View view) {
+            @Override
+			public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
                 // flag indica variable global de color a guardar
                 myIntent.putExtra("flag", 1);
@@ -42,7 +43,8 @@ public class MainActivity extends Activity {
         Button calibrarMar = (Button) findViewById(R.id.buttonCalibrarMar);
         calibrarMar.setOnClickListener(new View.OnClickListener() {
         	// si hago click, redireccionar a la actividad
-            public void onClick(View view) {
+            @Override
+			public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
                 // flag indica variable global de color a guardar
                 myIntent.putExtra("flag", 2);
@@ -55,7 +57,8 @@ public class MainActivity extends Activity {
         Button calibrarCont = (Button) findViewById(R.id.buttonCalibrarCont);
         calibrarCont.setOnClickListener(new View.OnClickListener() {
         	// si hago click, redireccionar a la actividad
-            public void onClick(View view) {
+            @Override
+			public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), CalibrateActivity.class);
                 // flag indica variable global de color a guardar
                 myIntent.putExtra("flag", 3);
@@ -67,7 +70,8 @@ public class MainActivity extends Activity {
 		// boton acceso a la deteccion 
     	Button detectar = (Button) findViewById(R.id.buttonDetectar);
         detectar.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
+            @Override
+			public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), ColorBlobDetectionActivity.class);
                 startActivityForResult(myIntent, 0);
             }

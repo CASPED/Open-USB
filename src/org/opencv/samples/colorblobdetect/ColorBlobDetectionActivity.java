@@ -173,7 +173,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         
     }
     
-    public void onStop(){
+    @Override
+	public void onStop(){
     	super.onStop();
     	SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
     	SharedPreferences.Editor editor = settings.edit();
@@ -197,7 +198,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         editor.commit();
     }
 
-    public void onDestroy() {
+    @Override
+	public void onDestroy() {
         super.onDestroy();
         // apaga camara 
         if (mOpenCvCameraView != null)
@@ -236,7 +238,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	return '0'; 
     }
 
-    public void onCameraViewStarted(int width, int height) {
+    @Override
+	public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         Log.i(TAG, "Valores height "+ height + " width "+ width+ "/n");
         mCanDetector = new ColorBlobDetector();
@@ -250,11 +253,13 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
                 
     }
 
-    public void onCameraViewStopped() {
+    @Override
+	public void onCameraViewStopped() {
         mRgba.release();
     }
     
-    public boolean onTouch(View v, MotionEvent event){
+    @Override
+	public boolean onTouch(View v, MotionEvent event){
     	
     	// obtener los valores globales seleccionados al calibrar
     	Scalar hsvCanColor=((ColorsApplication)getApplication()).getCanColor();
@@ -272,7 +277,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
 
 
-    public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
+    @Override
+	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = inputFrame.rgba();
     	  	
         if (mIsColorSelected) {

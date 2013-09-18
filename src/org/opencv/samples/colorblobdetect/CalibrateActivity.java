@@ -65,7 +65,8 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 	        Log.i(TAG, "Instantiated new " + this.getClass());
 	    }
 	    
-	    public void onCameraViewStarted(int width, int height) {
+	    @Override
+		public void onCameraViewStarted(int width, int height) {
 	        mRgba = new Mat(height, width, CvType.CV_8UC4);
 	        mDetector = new ColorBlobDetector();
 	        mSpectrum = new Mat();
@@ -75,7 +76,8 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 	        CONTOUR_COLOR = new Scalar(255,0,0,255);	                
 	    }
 
-	    public void onCameraViewStopped() {
+	    @Override
+		public void onCameraViewStopped() {
 	        mRgba.release();
 	    }
 	    
@@ -107,6 +109,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
 	}
 
+	@Override
 	public void onDestroy() {
 		super.onDestroy();
 		// si la camara esta abierta, cerrarla
@@ -115,6 +118,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 	}
 
 
+	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		Log.i(TAG, "Tocado");
 		// columnas y filas de la imagen
@@ -185,6 +189,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
     }
 	
 	// en cada cuadro de la imagen recibida por la camara 
+	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         

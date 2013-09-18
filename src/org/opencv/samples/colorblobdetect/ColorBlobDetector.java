@@ -85,7 +85,7 @@ public class ColorBlobDetector {
     	mLowerBound.val[3] = 0;
         mUpperBound.val[3] = 255;
         
-        Mat spectrumHsv = new Mat(1, (int)(255-0), CvType.CV_8UC3);
+        Mat spectrumHsv = new Mat(1, 255-0, CvType.CV_8UC3);
 
         for (int j = 0; j < 255-0; j++) {
             byte[] tmp = {(byte)(0+j), (byte)255, (byte)255};
