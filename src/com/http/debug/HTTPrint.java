@@ -66,8 +66,8 @@ public class HTTPrint {
 		
 		RequestParams params = new RequestParams();
 		
-		if(error) params.put("action", "out");
-		else params.put("action", "error");
+		if(error) params.put("action", "error");
+		else params.put("action", "out");
 
 		params.put("msg", text);
 
