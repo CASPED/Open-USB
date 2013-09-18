@@ -6,13 +6,24 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.Button;
 
+import com.http.debug.HTTPrint;
+
 
 public class MainActivity extends Activity {
+	
+	HTTPrint http_print;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		/** Aquí se inicializa el debugger de http, en el parametro hay que poner el IP del
+		 * servidor.
+		 */
+		http_print = new HTTPrint("http://192.168.0.199");
+		//Cada print debería enviarse al servidor:
+		System.out.print("Planificador incializado.");
 		
 		// boton acceso a calibrar lata
 		Button calibrarLata = (Button) findViewById(R.id.buttonCalibrarLatas);
