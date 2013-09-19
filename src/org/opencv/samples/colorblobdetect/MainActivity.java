@@ -18,11 +18,11 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		/** Aquí se inicializa el debugger de http, en el parametro hay que poner el IP del
+		/** Aquï¿½ se inicializa el debugger de http, en el parametro hay que poner el IP del
 		 * servidor.
 		 */
-		http_print = new HTTPrint("http://192.168.0.105");
-		//Cada print debería enviarse al servidor:
+		//http_print = new HTTPrint("http://192.168.0.105");
+		//Cada print deberï¿½a enviarse al servidor:
 		System.out.print("Planificador incializado.");
 		
 		// boton acceso a calibrar lata
@@ -78,8 +78,27 @@ public class MainActivity extends Activity {
 
         });
         
+     // Prueba de demostracion. Detectar Lata 
+    	Button detectarLata = (Button) findViewById(R.id.buttonCanDetect);
+        detectarLata.setOnClickListener(new View.OnClickListener() {
+            @Override
+			public void onClick(View view) {
+                Intent myIntent = new Intent(view.getContext(), CanDetectActivity.class);
+                startActivityForResult(myIntent, 0);
+            }
+
+        });
         
-        
+     // Prueba de demostracion. Detectar Contenedor
+    	Button detectarCont = (Button) findViewById(R.id.buttonContDetect);
+        detectarCont.setOnClickListener(new View.OnClickListener() {
+            @Override
+			public void onClick(View view) {
+                Intent myIntent = new Intent(view.getContext(), ContDetectActivity.class);
+                startActivityForResult(myIntent, 0);
+            }
+
+        });
         
 	}
 

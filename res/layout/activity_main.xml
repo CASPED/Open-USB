@@ -48,4 +48,22 @@
         android:layout_marginTop="33dp"
         android:text="@string/calibrar_mar" />
 
+    <Button
+        android:id="@+id/buttonCanDetect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/buttonCalibrarMar"
+        android:layout_below="@+id/buttonCalibrarCont"
+        android:layout_marginTop="38dp"
+        android:text="@string/can_detect" />
+
+    <Button
+        android:id="@+id/buttonContDetect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/buttonCanDetect"
+        android:layout_below="@+id/buttonCanDetect"
+        android:layout_marginTop="26dp"
+        android:text="@string/cont_detect" />
+
 </RelativeLayout>

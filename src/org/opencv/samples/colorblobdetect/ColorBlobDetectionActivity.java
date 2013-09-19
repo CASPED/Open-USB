@@ -316,7 +316,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
         	center.y = mCanDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center);
-        	Log.i(TAG, "Posicion de la lata: " + pos);       	
+        	System.out.print("Posicion de la lata: " + pos);       	
         	// Enviar informacion al arduino
         	try {
         		sendData(pos);

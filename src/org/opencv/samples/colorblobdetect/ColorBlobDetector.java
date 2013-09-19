@@ -211,7 +211,7 @@ public class ColorBlobDetector {
     	while (contours.hasNext()){
     		MatOfPoint contour= contours.next();
     		
-    		// Sacar el rectangulo y el punto mas bajo
+    		// Sacar el rectangulo y el punto inferior
     		Rect rectangle = Imgproc.boundingRect(contour);           	
         	double y_r = rectangle.y + rectangle.height;
         	double x_r= rectangle.x + rectangle.width/2;

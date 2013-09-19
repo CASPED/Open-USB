@@ -13,5 +13,9 @@
     <string name="title_activity_calibrate_see">CalibrateSeeActivity</string>
     <string name="hello_world">Hello world!</string>
     <string name="driver">Driver</string>
-
+    <string name="title_activity_can_detect">CanDetectActivity</string>
+    <string name="can_detect">Detectar una Lata</string>
+    <string name="title_activity_cont_detect">ContDetectActivity</string>
+	<string name="cont_detect">Detectar el contenedor</string>
+	
 </resources>
