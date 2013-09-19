@@ -37,16 +37,21 @@
     color: rgb(121, 104, 50);
 }
 
-.output ul {
+.output .text {
     position: absolute;
     top: 40px;
-    bottom: 0;
+    bottom: 11px;
     right: 0;
     left: -10px;
-    overflow-y: auto;
-    
-    overflow-x: hidden;
+    overflow: hidden;
     list-style-type: square;
+}
+
+.output:hover .text { overflow: auto; }
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .output .text::-webkit-scrollbar {width: 9px; height: 9px;}
+    .output .text::-webkit-scrollbar-thumb {background-color: gray;}
+    .output .text::-webkit-scrollbar-thumb:hover {background-color: white;}
 }
 
 .output li {}
@@ -69,6 +74,7 @@
     background-color: rgb(15, 15, 15);
     box-shadow: -5px 0 8px black;
 }
+
 
 .visor {
     position: absolute;

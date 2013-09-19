@@ -41,15 +41,20 @@ var PageController = can.Control(
     },
 
     onTrace: function(data) {
-        console.log("Info: ", data);
-
         var self = this;
         $.each(data, function(action) {
             self.dom.out_text.append(
                 can.view('graphics/trace.ejs', {"msg": data[action], "action": action})
             );
         });
+
+        self.dom.out_text.stop(true, false);
+        self.dom.out_text.animate({scrollTop: self.dom.out_text[0].scrollHeight}, {duration: 200, queue: false});
         
+        var childs = self.dom.out_text.children();
+        if(childs.length > 700) {
+            childs.slice(0,100).remove();
+        }
     },
 
     //DOM EVENTS
