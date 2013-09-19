@@ -1,17 +1,25 @@
 package org.opencv.samples.colorblobdetect;
 
+import java.io.IOException;
+
 import android.os.Bundle;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.usb.UsbManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.http.debug.HTTPrint;
 
 
 public class MainActivity extends Activity {
 	
 	HTTPrint http_print;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +104,52 @@ public class MainActivity extends Activity {
 			public void onClick(View view) {
                 Intent myIntent = new Intent(view.getContext(), ContDetectActivity.class);
                 startActivityForResult(myIntent, 0);
+            }
+
+        });
+        
+     // Prueba de demostracion. Abrir Contenedor
+    	Button abrirCont = (Button) findViewById(R.id.buttonOpenDoor);
+        abrirCont.setOnClickListener(new View.OnClickListener() {
+        	private static final String  TAG = "OCVSample::Activity";
+        	UsbManager manager;
+        	UsbSerialDriver sendDriver;
+        	
+            @Override
+			public void onClick(View view) {
+            	this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+            	this.sendDriver = UsbSerialProber.acquire(this.manager);
+            	
+            	if (sendDriver == null) {
+                	Log.i(TAG, "No se encontro dispositivo");
+                } else {
+                    try {
+                    	sendDriver.open();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
+                        try {
+                            sendDriver.close();
+                        } catch (IOException e2) {
+                            // Ignore.
+                        }
+                        sendDriver = null;
+                        return;
+                    }
+                }
+            	
+            	if(sendDriver != null) {
+            		try{
+            			// escribir bytes de datos 
+            			sendDriver.setBaudRate(115200);
+            			byte [] byteToSend = new byte[1]; 
+            			byteToSend[0] = (byte)'2';
+            			sendDriver.write(byteToSend, 1000);
+            			Log.e(TAG, "Si pude enviar");
+            		} catch (IOException e) {
+            			Log.e(TAG, "No pude enviar");
+            		} 
+            	}
+            	
             }
 
         });

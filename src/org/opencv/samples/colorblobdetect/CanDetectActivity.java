@@ -201,7 +201,7 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
     	if(sendDriver != null) {
     		try{
     			// escribir bytes de datos 
-    			sendDriver.setBaudRate(9600);
+    			sendDriver.setBaudRate(115200);
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
     			sendDriver.write(byteToSend, 1000);
@@ -216,7 +216,7 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
     public char readData() throws IOException {
     	if (sendDriver != null) {
     		try {
-	    		sendDriver.setBaudRate(9600);
+	    		sendDriver.setBaudRate(115200);
 	    		byte [] buffer = new byte[1];
 	    		sendDriver.read(buffer, 1000); 
 	    		return (char)buffer[0];

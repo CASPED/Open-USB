@@ -73,6 +73,10 @@
             android:name="org.opencv.samples.colorblobdetect.ContDetectActivity"
             android:label="@string/title_activity_cont_detect" >
         </activity>
+        <activity
+            android:name="org.opencv.samples.colorblobdetect.OpenDoorActivity"
+            android:label="@string/title_activity_open_door" >
+        </activity>
     </application>
 
 </manifest>

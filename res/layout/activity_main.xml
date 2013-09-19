@@ -66,4 +66,13 @@
         android:layout_marginTop="26dp"
         android:text="@string/cont_detect" />
 
+    <Button
+        android:id="@+id/buttonOpenDoor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/buttonContDetect"
+        android:layout_below="@+id/buttonContDetect"
+        android:layout_marginTop="26dp"
+        android:text="@string/open_door" />
+
 </RelativeLayout>

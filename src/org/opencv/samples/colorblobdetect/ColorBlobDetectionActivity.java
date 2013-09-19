@@ -1,7 +1,5 @@
 package org.opencv.samples.colorblobdetect;
 
-import java.util.Iterator;
-import java.util.List;
 import java.io.IOException;
 
 
@@ -17,12 +15,9 @@ import org.opencv.core.Core;
 import org.opencv.core.Point;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -56,14 +51,13 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar				 WHITE; 
     
     private CameraBridgeViewBase mOpenCvCameraView;
-    private TextView driverStatus;
     
     // Para la comunicacion serial con arduino
     // Manejador de dispositivos usb 
-	UsbManager manager;
+	private UsbManager manager;
 	// Dispositivo en uso o {@code null}
-	UsbSerialDriver sendDriver;
-	UsbSerialDriver readDriver; 
+	private UsbSerialDriver sendDriver;
+	private UsbSerialDriver readDriver; 
     
 	public static final String PREFS_NAME = "colors"; 
 
@@ -212,7 +206,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	if(sendDriver != null) {
     		try{
     			// escribir bytes de datos 
-    			sendDriver.setBaudRate(9600);
+    			sendDriver.setBaudRate(115200);
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
     			sendDriver.write(byteToSend, 1000);
@@ -227,7 +221,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     public char readData() throws IOException {
     	if (sendDriver != null) {
     		try {
-	    		sendDriver.setBaudRate(9600);
+	    		sendDriver.setBaudRate(115200);
 	    		byte [] buffer = new byte[1];
 	    		sendDriver.read(buffer, 1000); 
 	    		return (char)buffer[0];
