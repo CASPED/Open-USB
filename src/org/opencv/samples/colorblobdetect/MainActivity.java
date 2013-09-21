@@ -147,7 +147,13 @@ public class MainActivity extends Activity {
             			Log.e(TAG, "Si pude enviar");
             		} catch (IOException e) {
             			Log.e(TAG, "No pude enviar");
-            		} 
+            		} finally {
+            			try {
+                            sendDriver.close();
+                        } catch (IOException e2) {
+                        	Log.i(TAG, "Se ha cerrado el driver");
+                        }
+            		}
             	}
             	
             }

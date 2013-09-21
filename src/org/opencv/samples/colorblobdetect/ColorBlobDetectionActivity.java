@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
-//import com.hoho.android.usbserial.examples.R;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
@@ -27,7 +26,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
-import android.widget.TextView;
 import android.hardware.usb.UsbManager;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -52,12 +50,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
-    // Para la comunicacion serial con arduino
+    // *** Para la comunicacion serial con arduino *** //
     // Manejador de dispositivos usb 
 	private UsbManager manager;
 	// Dispositivo en uso o {@code null}
-	private UsbSerialDriver sendDriver;
-	private UsbSerialDriver readDriver; 
+	private UsbSerialDriver driver; 
     
 	public static final String PREFS_NAME = "colors"; 
 
@@ -134,6 +131,16 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         // apaga camara 
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
+        
+        // Cierra driver
+        if (driver != null) {
+            try {
+                driver.close();
+            } catch (IOException e) {
+                // Ignore.
+            }
+            driver = null;
+        }
     }
 
     @Override
@@ -143,24 +150,24 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
         Log.i(TAG, "called onResume");
         // Obtener el driver para poder enviar datos al arduino 
-        this.sendDriver = UsbSerialProber.acquire(this.manager);
+        this.driver = UsbSerialProber.acquire(this.manager);
 
-        Log.i(TAG, "Resumed, sendDriver=" + sendDriver);
-        Log.i(TAG, "Resumed, readDriver=" + readDriver);
+        Log.i(TAG, "Resumed, driver=" + driver);
+        
         // manejo del driver para escribir
-        if (sendDriver == null) {
+        if (driver == null) {
         	Log.i(TAG, "No se encontro dispositivo");
         } else {
             try {
-            	sendDriver.open();
+            	driver.open();
             } catch (IOException e) {
                 Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
                 try {
-                    sendDriver.close();
+                    driver.close();
                 } catch (IOException e2) {
                     // Ignore.
                 }
-                sendDriver = null;
+                driver = null;
                 return;
             }
         }
@@ -170,6 +177,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     @Override
 	public void onStop(){
     	super.onStop();
+    	
     	SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
     	SharedPreferences.Editor editor = settings.edit();
     	
@@ -203,13 +211,13 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     // funcion para enviar datos a arduino por serial 
     public void sendData(char dataToSend) throws IOException {
     	    	
-    	if(sendDriver != null) {
+    	if(driver != null) {
     		try{
     			// escribir bytes de datos 
-    			sendDriver.setBaudRate(115200);
+    			driver.setBaudRate(115200);
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
-    			sendDriver.write(byteToSend, 1000);
+    			driver.write(byteToSend, 1000);
     		} catch (IOException e) {
     			// bla
     		} 
@@ -219,11 +227,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     // funcion para recibir datos de arduino por serial 
     public char readData() throws IOException {
-    	if (sendDriver != null) {
+    	if (driver != null) {
     		try {
-	    		sendDriver.setBaudRate(115200);
+	    		driver.setBaudRate(115200);
 	    		byte [] buffer = new byte[1];
-	    		sendDriver.read(buffer, 1000); 
+	    		driver.read(buffer, 1000); 
 	    		return (char)buffer[0];
 	    	} catch (IOException e) {
 	    		// bla
@@ -333,8 +341,42 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		// encuentra el punto medio del contenedor y lo dibuja
 		if(mContDetector.getNumContours()>0){
 			Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+        	center.y = mContDetector.getLowestPointSea(mRgba);
+        	char pos= getPos(center);
+        	System.out.print("Posicion del contenedor: " + pos);
+        	
+        	// Enviar informacion al arduino
+        	try {
+        		sendData(pos);
+        	} catch (IOException e) {
+        		// bla
+        	}
+			
+			if(pos == 'p'){
+				modoContenedor = false;
+				esperarDeposito();
+			}
+		}else{
+			try {
+        		sendData('d');
+        	} catch (IOException e) {
+        		// bla
+        	}
 		}
-		//falta enviar posicion del contenedor al arduino		
+				
+    }
+    
+    private void esperarDeposito(){
+    	boolean esperando = true;
+    	while (esperando){
+	    	try {
+	    		if (readData() == 'r') {
+	    			esperando = false;
+	    		}
+	    	} catch (IOException e) {
+	    		// bla
+	    	}
+    	}
     }
     
     private boolean evitarMar() {
