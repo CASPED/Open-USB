@@ -96,6 +96,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.enableFpsMeter();
         mOpenCvCameraView.setMaxFrameSize(400, 400);
+        
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
         // Para la comunicacion serial
@@ -121,6 +122,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        ((ColorsApplication)getApplication()).setCanColor(new Scalar(can_H,can_S,can_V,255));
 	        ((ColorsApplication)getApplication()).setSeaColor(new Scalar(sea_H,sea_S,sea_V,255));
 	        ((ColorsApplication)getApplication()).setContColor(new Scalar(cont_H,cont_S,cont_V,255));
+	        
         }
     }
 
@@ -273,8 +275,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	    mSeaDetector.setHsvColor(hsvSeaColor);
 	    mContDetector.setHsvColor(hsvContColor);
 	    
-	    mIsColorSelected = true;    	
-    	
+	    mIsColorSelected = true;
+	    
+	    initArduino();
+	    esperarReinicio(); 
+	        	
     	return false;
     }
 
@@ -284,6 +289,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mRgba = inputFrame.rgba();
     	  	
         if (mIsColorSelected) {
+        	
         	
         	if (evitarMar()) {
         		return mRgba; 
@@ -310,7 +316,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
         return mRgba;
     }
-    
+   
     private void buscarLatas() {
     	mCanDetector.process(mRgba);
     	// si veo latas 
@@ -325,6 +331,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	} catch (IOException e) {
         		// bla
         	}
+        	
+        	if(pos == 'p'){
+				esperarReinicio();
+			}
+        	
         // si no veo latas 
         } else {
         	try {
@@ -354,7 +365,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 			
 			if(pos == 'p'){
 				modoContenedor = false;
-				esperarDeposito();
+				esperarReinicio();
 			}
 		}else{
 			try {
@@ -366,7 +377,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 				
     }
     
-    private void esperarDeposito(){
+    private void initArduino(){
+    	try {
+    		sendData('i');
+    	} catch (IOException e) {
+    		// bla
+    	}
+    }
+    
+    private void esperarReinicio(){
     	boolean esperando = true;
     	while (esperando){
 	    	try {
@@ -391,6 +410,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	if(lowest_sea > (mRgba.height()/8)*7){
         		try {
             		sendData('s');
+            		sendData('d');
             	} catch (IOException e) {
             		// bla
             	}
