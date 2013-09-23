@@ -808,12 +808,12 @@ void regresarBrazo() {
     delay(1500);
     garra.write(120);
     delay(600);
-    garra.write(80);
+    garra.write(100);
 }
 
 void agarrarLata() {
     brazo.write(100);
-    delay(300);
+    delay(700);
     
     bajarPolea();
     while(true) if(digitalRead(POLEA_SENSOR_BAJO_PIN) == LOW) break;
