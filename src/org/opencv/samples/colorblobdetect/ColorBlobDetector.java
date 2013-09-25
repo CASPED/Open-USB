@@ -175,7 +175,7 @@ public class ColorBlobDetector {
      * Devuelve el punto central de la lata cuya posicion sea
      * la mas baja en la imagen 
      */
-    public Blob getNearestObject(Mat mRgba, Scalar COLOR, double lowestSea){
+    public Blob getNearestObject(Mat mRgba, Scalar COLOR, double highestSea){
     	Iterator<MatOfPoint> contours = mContours.iterator();
     	double max_y= -1;
     	double x=0;
@@ -193,7 +193,7 @@ public class ColorBlobDetector {
         	area = rectangle.width*rectangle.height;
         	
         	// Quedarse con el mas bajo en la imagen
-        	if(y_center > max_y && y_center > lowestSea){
+        	if(y_center > max_y && y_center > highestSea){
         		area = rectangle.width*rectangle.height;
         		max_y= y_center;
         		x= x_center;
@@ -212,6 +212,30 @@ public class ColorBlobDetector {
     	b.area = area;
     	
     	return b;
+    }
+    
+    public double getHighestPointSea(Mat mRgba){
+    	Iterator<MatOfPoint> contours = mContours.iterator();
+    	double high_y = mRgba.height();
+    	double x = mRgba.width();
+    	
+    	while(contours.hasNext()){
+    		MatOfPoint contour = contours.next();
+    		
+    		// Sacar el rectangulo y el punto superior
+    		Rect rectangle = Imgproc.boundingRect(contour);
+    		double y_r = rectangle.y;
+    		double x_r = rectangle.x+rectangle.width/2;
+    		
+    		if(y_r < high_y){
+    			high_y = y_r;
+    			x = x_r;
+    		}	
+    	}
+    	
+    	Core.circle(mRgba, new Point(x,high_y), 3, new Scalar(255,0,0,255));	
+    	return high_y;
+    	
     }
     
     public double getLowestPointSea(Mat mRgba){

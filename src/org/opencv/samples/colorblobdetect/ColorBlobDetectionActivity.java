@@ -54,6 +54,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private char 				 prevMsg = '0'; 
     private boolean				 eviteMar = false; 
     private double 				 lowestSea = -1; 
+    private double 				 highestSea; 
 
     
     private CameraBridgeViewBase mOpenCvCameraView;
@@ -305,6 +306,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	  	
         if (mIsColorSelected) {
         	
+            highestSea = mRgba.height(); 
+        	
         	if (evitarMar()) {
         		eviteMar = true; 
         		return mRgba; 
@@ -340,7 +343,6 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             //android.os.Process.killProcess(android.os.Process.myPid());
         }
 
-        lowestSea = -1; 
         return mRgba;
     }
    
@@ -348,9 +350,10 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mCanDetector.process(mRgba);
     	// si veo latas 
         if(mCanDetector.getNumContours()>0){  
-        	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, lowestSea);
+        	// le paso el punto alto del mar para no detectar latas por encima 
+        	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, highestSea);
         	Point center = can.center;
-        	if (center.y == -1) return 1; // caso en que no consegui
+        	//if (center.y == -1) return 1; // caso en que no consegui
         	center.y = mCanDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center, modoContenedor);
         	
@@ -471,6 +474,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	
             // Si el mar esta cerca enviar 's' al arduino
         	lowestSea = mSeaDetector.getLowestPointSea(mRgba);
+        	highestSea =  mSeaDetector.getHighestPointSea(mRgba);
         	if(lowestSea > (mRgba.height()/8)*7){
         		if (prevMsg != 's') {
 	        		try {
