@@ -277,7 +277,8 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
 		
 		// encuentra el punto medio del contenedor y lo dibuja
 		if(mContDetector.getNumContours()>0){
-			Point center = mContDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+			Blob contenedor = mContDetector.getNearestObject(mRgba, RECTANGLE_COLOR, -1);
+			Point center = contenedor.center;
         	center.y = mContDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center);
         	if (prevMsg != pos) {

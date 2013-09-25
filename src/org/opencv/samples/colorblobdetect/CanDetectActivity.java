@@ -273,8 +273,9 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
     private void buscarLatas() {
     	mCanDetector.process(mRgba);
     	// si veo latas 
-        if(mCanDetector.getNumContours()>0){     
-        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+        if(mCanDetector.getNumContours()>0){    
+        	Blob can =  mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, -1);
+        	Point center = can.center;
         	center.y = mCanDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center);
         	System.out.print("Posicion de la lata: " + pos);       	

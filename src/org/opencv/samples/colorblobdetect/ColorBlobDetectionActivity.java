@@ -15,6 +15,8 @@ import org.opencv.core.Point;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 
@@ -51,6 +53,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     private char 				 prevMsg = '0'; 
     private boolean				 eviteMar = false; 
+    private double 				 lowestSea = -1; 
+
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
@@ -297,9 +301,9 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     @Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = inputFrame.rgba();
+    	//Imgproc.GaussianBlur(mRgba, mRgba, new Size(11,11), 0);
     	  	
         if (mIsColorSelected) {
-        	
         	
         	if (evitarMar()) {
         		eviteMar = true; 
@@ -336,16 +340,30 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
             //android.os.Process.killProcess(android.os.Process.myPid());
         }
 
+        lowestSea = -1; 
         return mRgba;
     }
    
     private int buscarLatas() {
     	mCanDetector.process(mRgba);
     	// si veo latas 
-        if(mCanDetector.getNumContours()>0){     
-        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+        if(mCanDetector.getNumContours()>0){  
+        	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, lowestSea);
+        	Point center = can.center;
+        	if (center.y == -1) return 1; // caso en que no consegui
         	center.y = mCanDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center, modoContenedor);
+        	
+        	// si esta abajo pero es muy peq para ser lata (caso sombras)
+        	if (pos == 'p' && can.area < 10000 ) {
+        		Log.i(TAG, "SEND w");
+	        	// Enviar informacion al arduino
+	        	try {
+	        		sendData('w');
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
+        	}
         	//System.out.print("Posicion de la lata: " + pos);
         	if (prevMsg == 'p' && pos != 'p'){
         		
@@ -365,7 +383,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	} 
         	
         	if(pos == 'p'){
-				esperarReinicio();
+				//esperarReinicio();
 			}
         	
         // si no veo latas 
@@ -389,7 +407,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		
 		// encuentra el punto medio del contenedor y lo dibuja
 		if(mContDetector.getNumContours()>0){
-			Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+			Blob contenedor = mContDetector.getNearestObject(mRgba, CONT_COLOR, lowestSea);
+			Point center = contenedor.center;
         	center.y = mContDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center, modoContenedor);
         	if (prevMsg != pos) {
@@ -451,8 +470,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	mSeaDetector.drawRectangles(mRgba, SEA_COLOR);
         	
             // Si el mar esta cerca enviar 's' al arduino
-        	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
-        	if(lowest_sea > (mRgba.height()/8)*7){
+        	lowestSea = mSeaDetector.getLowestPointSea(mRgba);
+        	if(lowestSea > (mRgba.height()/8)*7){
         		if (prevMsg != 's') {
 	        		try {
 	                	Log.i(TAG, "SEND s");
@@ -477,11 +496,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         Core.rectangle(mRgba, pt1, pt2, WHITE); 
         // C centro-arriba
         Point pt3= new Point(mRgba.width()/4,0);
-        Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
+        Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3.2 );
         Core.rectangle(mRgba, pt3, pt4, WHITE);
         // N centro-abajo
-        Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
-        Point pt6= new Point((mRgba.width()/4)*2.8,mRgba.height());
+        Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3.2);
+        Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
         Core.rectangle(mRgba, pt5, pt6, WHITE);
         // R derecha
         Point pt7= new Point((mRgba.width()/4)*3,0);
@@ -516,7 +535,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		// Esquina superior izq de la region
 		Point p0= new Point();
 		p0.x= mRgba.width()/4;
-		p0.y= (mRgba.height()/4)*2.8;
+		p0.y= (mRgba.height()/4)*3.2;
 		
 		// Esquina inferior derecha de la region
 		Point p1= new Point(); 
@@ -539,7 +558,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		// Esquina inferior derecha de la region
 		Point p1= new Point(); 
 		p1.x= (mRgba.width()/4)*3;
-		p1.y= (mRgba.height()/4)*3;
+		p1.y= (mRgba.height()/4)*3.2;
 		
 		return (p0.x <= center.x && center.x <= p1.x) &&
 				(p0.y <= center.y && center.y <= p1.y);
