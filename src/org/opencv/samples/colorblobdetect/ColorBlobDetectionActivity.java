@@ -50,6 +50,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar				 WHITE; 
     
     private char 				 prevMsg = '0'; 
+    private boolean				 eviteMar = false; 
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
@@ -301,17 +302,28 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	
         	
         	if (evitarMar()) {
+        		eviteMar = true; 
         		return mRgba; 
+        	}
+        	if (eviteMar){
+        		Log.i(TAG, "SEND d");
+	        	try {
+	        		sendData('d');
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
+	        	prevMsg = 'd'; 
+	        	eviteMar = false;
         	}
         	
             // leer de arduino a ver si debo buscar contenedor 
-        	try {
+        	/*try {
         		if (readData() == 'h') {
         			modoContenedor = true;
         		}
         	} catch (IOException e) {
         		// bla
-        	}
+        	}*/
         	
         	if (modoContenedor) {
         		buscarContenedor();
@@ -327,14 +339,20 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         return mRgba;
     }
    
-    private void buscarLatas() {
+    private int buscarLatas() {
     	mCanDetector.process(mRgba);
     	// si veo latas 
         if(mCanDetector.getNumContours()>0){     
         	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
         	center.y = mCanDetector.getLowestPointSea(mRgba);
-        	char pos= getPos(center);
+        	char pos= getPos(center, modoContenedor);
         	//System.out.print("Posicion de la lata: " + pos);
+        	if (prevMsg == 'p' && pos != 'p'){
+        		
+        		//modoContenedor = true;
+        		
+        		//return 1; 
+        	}
         	if (prevMsg != pos || pos == 'p') {
         		Log.i(TAG, "SEND " + pos);
 	        	// Enviar informacion al arduino
@@ -344,7 +362,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        		// bla
 	        	}
 	        	prevMsg = pos; 
-        	}
+        	} 
         	
         	if(pos == 'p'){
 				esperarReinicio();
@@ -362,6 +380,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        	prevMsg = 'd'; 
         	}
         }
+        
+        return 1; 
     }
     
     private void buscarContenedor() {
@@ -371,27 +391,34 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		if(mContDetector.getNumContours()>0){
 			Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
         	center.y = mContDetector.getLowestPointSea(mRgba);
-        	char pos= getPos(center);
+        	char pos= getPos(center, modoContenedor);
+        	if (prevMsg != pos) {
         	//System.out.print("Posicion del contenedor: " + pos);
-        	
+        		Log.i(TAG, "SEND " + pos);
         	// Enviar informacion al arduino
-        	try {
-        		sendData(pos);
-        	} catch (IOException e) {
-        		// bla
+        		try {
+        			sendData(pos);
+        		} catch (IOException e) {
+        			// bla
+        		}
+        		prevMsg = pos;
         	}
 			
-			if(pos == 'p'){
-				modoContenedor = false;
-				esperarReinicio();
-			}
-		}else{
-			try {
-        		sendData('d');
-        	} catch (IOException e) {
-        		// bla
+        	if(pos == 'c'){
+        		modoContenedor = false;
+        		esperarReinicio();
         	}
-		}
+        		
+        }else{
+        	if (prevMsg != 'd') {
+        		Log.i(TAG, "SEND d");
+        		try {
+        			sendData('d');
+        		} catch (IOException e) {
+        			// bla
+        		}
+        	}
+        }
 				
     }
     
@@ -465,7 +492,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     /* Devuelve el char que identifica la region 
      *de la imagen en la que se encuentra el punto
      */ 
-	private char getPos(Point center) {
+	private char getPos(Point center, boolean modoContenedor) {
 		if(isInL(center)){ 
 			return 'a';
 		}else if(isInR(center)){
@@ -473,7 +500,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		}else if(isInC(center)){
 			return 'w';
 		}else if(isInN(center)){
-			return 'p';
+			if (modoContenedor){
+				return 'c'; 
+			} else {
+				return 'p';
+			}
 		}
 		return 0;
 	}

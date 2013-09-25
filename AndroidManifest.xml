@@ -68,11 +68,14 @@
         </activity>
         <activity
             android:name="org.opencv.samples.colorblobdetect.CanDetectActivity"
-            android:label="@string/title_activity_can_detect" >
+            android:label="@string/title_activity_can_detect" 
+            android:screenOrientation="landscape" >
+            
         </activity>
         <activity
             android:name="org.opencv.samples.colorblobdetect.ContDetectActivity"
-            android:label="@string/title_activity_cont_detect" >
+            android:label="@string/title_activity_cont_detect" 
+            android:screenOrientation="landscape" >
         </activity>
         
     </application>
