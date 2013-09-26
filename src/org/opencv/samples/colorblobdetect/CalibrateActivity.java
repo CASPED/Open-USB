@@ -3,7 +3,9 @@ package org.opencv.samples.colorblobdetect;
 import java.util.List;
 
 import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -13,19 +15,17 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.imgproc.Imgproc;
 
-import android.os.Bundle;
-import android.app.Activity;	
+import android.app.Activity;
 import android.content.Intent;
-import android.util.Log;
+import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.View.OnTouchListener;
+import android.util.Log;
 
 
 public class CalibrateActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
@@ -90,9 +90,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
         
 		setContentView(R.layout.activity_calibrate_can);
 		// inicializo la camara 
-		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.activity_calibrate_can);
-        mOpenCvCameraView.setCvCameraViewListener(this);	        
-		
+		mOpenCvCameraView = Common.getCamera(this, R.id.activity_calibrate_can);
 	}
 	
 	@Override
@@ -191,7 +189,7 @@ public class CalibrateActivity extends Activity implements OnTouchListener, CvCa
 	// en cada cuadro de la imagen recibida por la camara 
 	@Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
+        mRgba = Common.filterImage(inputFrame);
         
         // si ya seleccione el color 
         if (mIsColorSelected) {

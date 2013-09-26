@@ -2,33 +2,32 @@ package org.opencv.samples.colorblobdetect;
 
 import java.io.IOException;
 
-
-import com.hoho.android.usbserial.driver.UsbSerialDriver;
-import com.hoho.android.usbserial.driver.UsbSerialProber;
-
 import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
-import org.opencv.core.Point;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.View.OnTouchListener;
-import android.hardware.usb.UsbManager;
-import android.content.Context;
-import android.content.SharedPreferences;
+
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
 
 
 
@@ -46,7 +45,8 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar               SEA_COLOR;
     private Scalar               CONT_COLOR;
     private Scalar				 RECTANGLE_COLOR; 
-    private Scalar				 WHITE; 
+    private Scalar				 WHITE;
+	private Mat                  mIntermediateMat;
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
@@ -92,10 +92,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         setContentView(R.layout.color_blob_detection_surface_view);
       
         // inicia camara 
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
-        mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.enableFpsMeter();
-        mOpenCvCameraView.setMaxFrameSize(400, 400);
+        mOpenCvCameraView = Common.getCamera(this, R.id.color_blob_detection_activity_surface_view);
         
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
@@ -253,13 +250,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         SEA_COLOR = new Scalar(145,245,51,0);
         CONT_COLOR = new Scalar(245,245,51,0);
         RECTANGLE_COLOR = new Scalar(0, 255, 255, 0);
-        WHITE = new Scalar(255, 255, 255, 0); 
-                
+        WHITE = new Scalar(255, 255, 255, 0);
     }
 
     @Override
 	public void onCameraViewStopped() {
         mRgba.release();
+        if (mIntermediateMat != null)
+            mIntermediateMat.release();
+        mIntermediateMat = null;
     }
     
     @Override
@@ -286,10 +285,9 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 
     @Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-    	mRgba = inputFrame.rgba();
-    	  	
+    	mRgba = Common.filterImage(inputFrame);
+    	
         if (mIsColorSelected) {
-        	
         	
         	if (evitarMar()) {
         		return mRgba; 
@@ -386,7 +384,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     private void esperarReinicio(){
-    	boolean esperando = true;
+    	/*boolean esperando = true;
     	while (esperando){
 	    	try {
 	    		if (readData() == 'r') {
@@ -395,7 +393,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	    	} catch (IOException e) {
 	    		// bla
 	    	}
-    	}
+    	}*/
     }
     
     private boolean evitarMar() {
@@ -528,7 +526,5 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		return (p0.x <= center.x && center.x <= p1.x) &&
 				(p0.y <= center.y && center.y <= p1.y);
 	}
-	
-	
 
 }
