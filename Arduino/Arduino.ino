@@ -119,13 +119,13 @@ unsigned long pulso4;
  //                                              *
  //***********************************************
  
- double Setpoint, Input, Output;
+ /*double Setpoint, Input, Output;
  //Specify the links and initial tuning parameters
  double Kp = 0;
  double Ki = 0;
  double Kd = 0;
  PID cpid(&Input, &Output, &Setpoint,Kp,Ki,Kd,DIRECT);
-
+*/
 
 void setup() 
 {
@@ -255,7 +255,9 @@ void setup()
      digitalWrite(rojo,HIGH);
      delay(100);
      digitalWrite(verde,HIGH);
-     delay(100);
+
+
+delay(100);
      digitalWrite(blanco,HIGH); 
      delay(100);
      digitalWrite(rojo,LOW);
@@ -380,7 +382,8 @@ void loop()
           digitalWrite(rojo,HIGH);   
           detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
           
-          agarrarLata();
+          //agarrarLata();
+          sostenerLata();
          //} while(Serial.available() <= 0); 
           break;
           
@@ -464,15 +467,53 @@ void loop()
           
           case '2': 
          
-          digitalWrite(verde,HIGH);    
+           digitalWrite(verde,HIGH);    
            
            compuerta2.write(50);
            compuerta1.write(120);
-          break;    
+           
+           girarDerecha(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+           delay(500);
+           girarIzquierda(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+           delay(500);
           
-          case 'b': 
-           agarrarLata();
-          break; 
+           girarDerecha(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+           delay(500);
+           girarIzquierda(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+           delay(500);
+          
+           detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+           break;    
+          
+          
+          
+          case 'c':
+          detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+          digitalWrite(blanco,HIGH);
+          digitalWrite(rojo,LOW); 
+          delay(500);
+          digitalWrite(blanco,!HIGH);
+          digitalWrite(rojo,!LOW); 
+          delay(500);
+          digitalWrite(blanco,HIGH);
+          digitalWrite(rojo,HIGH);
+           depositarLata();
+          break;
+         
+          case '0':
+          detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+          digitalWrite(blanco,HIGH);
+          digitalWrite(verde,LOW); 
+          delay(500);
+          digitalWrite(blanco,!HIGH);
+          digitalWrite(verde,!LOW); 
+          delay(500);
+          digitalWrite(blanco,HIGH);
+          digitalWrite(verde,HIGH);
+           sostenerLata();
+          break;
+          
+        
           
         
       
@@ -801,7 +842,7 @@ void ancho_pulso(const int encoder, int *c, unsigned long *high_value, unsigned 
 
 void regresarBrazo() {
     subirPolea();
-    while(true) if(digitalRead(POLEA_SENSOR_ALTO_PIN) == LOW) break;
+    while(true) if(digitalRead(POLEA_SENSOR_ALTO_PIN) == HIGH) break;
     pararPolea();
     
     brazo.write(0);
@@ -809,6 +850,14 @@ void regresarBrazo() {
     garra.write(120);
     delay(600);
     garra.write(100);
+}
+
+void mantenerBrazo() {
+    subirPolea();
+    while(true) if(digitalRead(POLEA_SENSOR_ALTO_PIN) == HIGH) break;
+    pararPolea();
+    brazo.write(0);
+   
 }
 
 void agarrarLata() {
@@ -828,6 +877,45 @@ void agarrarLata() {
 
     regresarBrazo();
 }
+
+
+///CONTENEDOR!!!!!!!!!!!!
+void sostenerLata() {
+    brazo.write(100);
+    delay(700);
+    
+    bajarPolea();
+    while(true) if(digitalRead(POLEA_SENSOR_BAJO_PIN) == LOW) break;
+    pararPolea();
+    
+    garra.write(120);
+    brazo.write(179);
+    delay(1000);
+    garra.write(0);
+    delay(2500);
+    brazo.write(40);
+    mantenerBrazo();
+}
+
+
+void depositarLata() {
+    brazo.write(100);
+    delay(700);
+    
+    bajarPolea();
+    while(true) if(digitalRead(POLEA_SENSOR_BAJO_PIN) == LOW) break;
+    pararPolea();
+    
+    garra.write(0);
+    //brazo.write(179);
+    delay(1000);
+    garra.write(120);
+    delay(2500);
+    brazo.write(40);
+    regresarBrazo();
+}
+
+
 
 void bajarPolea() {
   digitalWrite(POLEA_BAJAR_PIN, HIGH);

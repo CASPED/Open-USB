@@ -43,6 +43,8 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
+    private char 				 prevMsg = '0'; 
+    
     // Para la comunicacion serial con arduino
     // Manejador de dispositivos usb 
 	UsbManager manager;
@@ -88,7 +90,7 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.enableFpsMeter();
-        mOpenCvCameraView.setMaxFrameSize(400, 400);
+        //mOpenCvCameraView.setMaxFrameSize(400, 400);
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
 
         // Para la comunicacion serial
@@ -266,31 +268,43 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
         return mRgba;
     }
     
-    private void buscarContenedor() {
+	private void buscarContenedor() {
     	mContDetector.process(mRgba);
-    	// si veo latas 
-        if(mContDetector.getNumContours()>0){     
-        	Point center = mContDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+		
+		// encuentra el punto medio del contenedor y lo dibuja
+		if(mContDetector.getNumContours()>0){
+			Blob contenedor = mContDetector.getNearestObject(mRgba, RECTANGLE_COLOR, -1);
+			Point center = contenedor.center;
         	center.y = mContDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center);
-        	System.out.print("Posicion de la lata: " + pos);       	
+        	if (prevMsg != pos) {
+        	//System.out.print("Posicion del contenedor: " + pos);
+        		Log.i(TAG, "SEND " + pos);
         	// Enviar informacion al arduino
-        	try {
-        		sendData(pos);
-        	} catch (IOException e) {
-        		// bla
+        		try {
+        			sendData(pos);
+        		} catch (IOException e) {
+        			// bla
+        		}
+        		prevMsg = pos;
         	}
-        	if (pos == 'p')
+			
+        	if(pos == 'c'){
         		android.os.Process.killProcess(android.os.Process.myPid());
-        	
-        // si no veo latas 
-        } else {
-        	try {
-        		sendData('d');
-        	} catch (IOException e) {
-        		// bla
+
+        	}
+        		
+        }else{
+        	if (prevMsg != 'd') {
+        		Log.i(TAG, "SEND d");
+        		try {
+        			sendData('d');
+        		} catch (IOException e) {
+        			// bla
+        		}
         	}
         }
+				
     }
     
     
@@ -325,7 +339,7 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
 		}else if(isInC(center)){
 			return 'w';
 		}else if(isInN(center)){
-			return 'p';
+			return 'c';
 		}
 		return 0;
 	}
@@ -337,7 +351,7 @@ public class ContDetectActivity extends Activity implements OnTouchListener, CvC
 		// Esquina superior izq de la region
 		Point p0= new Point();
 		p0.x= mRgba.width()/4;
-		p0.y= (mRgba.height()/4)*3;
+		p0.y= (mRgba.height()/4)*2.8;
 		
 		// Esquina inferior derecha de la region
 		Point p1= new Point(); 

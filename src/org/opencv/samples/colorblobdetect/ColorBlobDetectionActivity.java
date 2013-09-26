@@ -14,6 +14,11 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -28,6 +33,12 @@ import android.view.WindowManager;
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
+import android.view.View.OnTouchListener;
+import android.hardware.usb.UsbManager;
+import android.hardware.SensorManager;
+import android.content.Context;
+import android.content.SharedPreferences;
+
 
 
 
@@ -48,7 +59,16 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar				 WHITE;
 	private Mat                  mIntermediateMat;
     
+    private char 				 prevMsg = '0'; 
+    private boolean				 eviteMar = false; 
+    private double 				 lowestSea = -1; 
+    private double 				 highestSea; 
+
+    
     private CameraBridgeViewBase mOpenCvCameraView;
+    
+    //para usar el compas del celular 
+    //private SensorManager mSensorManager;
     
     // *** Para la comunicacion serial con arduino *** //
     // Manejador de dispositivos usb 
@@ -91,7 +111,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.color_blob_detection_surface_view);
       
-        // inicia camara 
+        // inicia camara
         mOpenCvCameraView = Common.getCamera(this, R.id.color_blob_detection_activity_surface_view);
         
         //driverStatus = (TextView) findViewById(R.id.driverStatus);
@@ -99,6 +119,9 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         // Para la comunicacion serial
         this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
         Log.i(TAG, "Despues de pedir driver");
+        
+        //Para la orientacion 
+        //this.mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         
         // Para guardar los valores calibrados
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
@@ -278,7 +301,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	    mIsColorSelected = true;
 	    
 	    initArduino();
-	    esperarReinicio(); 
+	    //esperarReinicio(); 
 	        	
     	return false;
     }
@@ -289,18 +312,31 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mRgba = Common.filterImage(inputFrame);
     	
         if (mIsColorSelected) {
+            highestSea = mRgba.height(); 
         	
         	if (evitarMar()) {
+        		eviteMar = true; 
         		return mRgba; 
         	}
+        	if (eviteMar){
+        		Log.i(TAG, "SEND d");
+	        	try {
+	        		sendData('d');
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
+	        	prevMsg = 'd'; 
+	        	eviteMar = false;
+        	}
+        	
             // leer de arduino a ver si debo buscar contenedor 
-        	try {
+        	/*try {
         		if (readData() == 'h') {
         			modoContenedor = true;
         		}
         	} catch (IOException e) {
         		// bla
-        	}
+        	}*/
         	
         	if (modoContenedor) {
         		buscarContenedor();
@@ -316,33 +352,63 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         return mRgba;
     }
    
-    private void buscarLatas() {
+    private int buscarLatas() {
     	mCanDetector.process(mRgba);
     	// si veo latas 
-        if(mCanDetector.getNumContours()>0){     
-        	Point center = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR);
+        if(mCanDetector.getNumContours()>0){  
+        	// le paso el punto alto del mar para no detectar latas por encima 
+        	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, highestSea);
+        	Point center = can.center;
+        	//if (center.y == -1) return 1; // caso en que no consegui
         	center.y = mCanDetector.getLowestPointSea(mRgba);
-        	char pos= getPos(center);
-        	System.out.print("Posicion de la lata: " + pos);       	
-        	// Enviar informacion al arduino
-        	try {
-        		sendData(pos);
-        	} catch (IOException e) {
-        		// bla
+        	char pos= getPos(center, modoContenedor);
+        	
+        	// si esta abajo pero es muy peq para ser lata (caso sombras)
+        	if (pos == 'p' && can.area < 10000 ) {
+        		Log.i(TAG, "SEND w");
+	        	// Enviar informacion al arduino
+	        	try {
+	        		sendData('w');
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
         	}
+        	//System.out.print("Posicion de la lata: " + pos);
+        	if (prevMsg == 'p' && pos != 'p'){
+        		
+        		//modoContenedor = true;
+        		
+        		//return 1; 
+        	}
+        	if (prevMsg != pos || pos == 'p') {
+        		Log.i(TAG, "SEND " + pos);
+	        	// Enviar informacion al arduino
+	        	try {
+	        		sendData(pos);
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
+	        	prevMsg = pos; 
+        	} 
         	
         	if(pos == 'p'){
-				esperarReinicio();
+				//esperarReinicio();
 			}
         	
         // si no veo latas 
         } else {
-        	try {
-        		sendData('d');
-        	} catch (IOException e) {
-        		// bla
+        	if (prevMsg != 'd') {
+        		Log.i(TAG, "SEND d");
+	        	try {
+	        		sendData('d');
+	        	} catch (IOException e) {
+	        		// bla
+	        	}
+	        	prevMsg = 'd'; 
         	}
         }
+        
+        return 1; 
     }
     
     private void buscarContenedor() {
@@ -350,29 +416,37 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		
 		// encuentra el punto medio del contenedor y lo dibuja
 		if(mContDetector.getNumContours()>0){
-			Point center = mContDetector.getNearestObject(mRgba, CONT_COLOR);
+			Blob contenedor = mContDetector.getNearestObject(mRgba, CONT_COLOR, lowestSea);
+			Point center = contenedor.center;
         	center.y = mContDetector.getLowestPointSea(mRgba);
-        	char pos= getPos(center);
-        	System.out.print("Posicion del contenedor: " + pos);
-        	
+        	char pos= getPos(center, modoContenedor);
+        	if (prevMsg != pos) {
+        	//System.out.print("Posicion del contenedor: " + pos);
+        		Log.i(TAG, "SEND " + pos);
         	// Enviar informacion al arduino
-        	try {
-        		sendData(pos);
-        	} catch (IOException e) {
-        		// bla
+        		try {
+        			sendData(pos);
+        		} catch (IOException e) {
+        			// bla
+        		}
+        		prevMsg = pos;
         	}
 			
-			if(pos == 'p'){
-				modoContenedor = false;
-				esperarReinicio();
-			}
-		}else{
-			try {
-        		sendData('d');
-        	} catch (IOException e) {
-        		// bla
+        	if(pos == 'c'){
+        		modoContenedor = false;
+        		esperarReinicio();
         	}
-		}
+        		
+        }else{
+        	if (prevMsg != 'd') {
+        		Log.i(TAG, "SEND d");
+        		try {
+        			sendData('d');
+        		} catch (IOException e) {
+        			// bla
+        		}
+        	}
+        }
 				
     }
     
@@ -405,14 +479,18 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	mSeaDetector.drawRectangles(mRgba, SEA_COLOR);
         	
             // Si el mar esta cerca enviar 's' al arduino
-        	double lowest_sea= mSeaDetector.getLowestPointSea(mRgba);
-        	if(lowest_sea > (mRgba.height()/8)*7){
-        		try {
-            		sendData('s');
-            		sendData('d');
-            	} catch (IOException e) {
-            		// bla
-            	}
+        	lowestSea = mSeaDetector.getLowestPointSea(mRgba);
+        	highestSea =  mSeaDetector.getHighestPointSea(mRgba);
+        	if(lowestSea > (mRgba.height()/8)*7){
+        		if (prevMsg != 's') {
+	        		try {
+	                	Log.i(TAG, "SEND s");
+	            		sendData('s');
+	            	} catch (IOException e) {
+	            		// bla
+	            	}
+	        		prevMsg = 's'; 
+        		}
         		return true;
         	}
         }
@@ -428,10 +506,10 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         Core.rectangle(mRgba, pt1, pt2, WHITE); 
         // C centro-arriba
         Point pt3= new Point(mRgba.width()/4,0);
-        Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3 );
+        Point pt4= new Point( (mRgba.width()/4)*3 , (mRgba.height()/4)*3.2 );
         Core.rectangle(mRgba, pt3, pt4, WHITE);
         // N centro-abajo
-        Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3);
+        Point pt5= new Point(mRgba.width()/4,(mRgba.height()/4)*3.2);
         Point pt6= new Point((mRgba.width()/4)*3,mRgba.height());
         Core.rectangle(mRgba, pt5, pt6, WHITE);
         // R derecha
@@ -443,7 +521,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     /* Devuelve el char que identifica la region 
      *de la imagen en la que se encuentra el punto
      */ 
-	private char getPos(Point center) {
+	private char getPos(Point center, boolean modoContenedor) {
 		if(isInL(center)){ 
 			return 'a';
 		}else if(isInR(center)){
@@ -451,7 +529,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		}else if(isInC(center)){
 			return 'w';
 		}else if(isInN(center)){
-			return 'p';
+			if (modoContenedor){
+				return 'c'; 
+			} else {
+				return 'p';
+			}
 		}
 		return 0;
 	}
@@ -463,7 +545,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		// Esquina superior izq de la region
 		Point p0= new Point();
 		p0.x= mRgba.width()/4;
-		p0.y= (mRgba.height()/4)*3;
+		p0.y= (mRgba.height()/4)*3.2;
 		
 		// Esquina inferior derecha de la region
 		Point p1= new Point(); 
@@ -486,7 +568,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 		// Esquina inferior derecha de la region
 		Point p1= new Point(); 
 		p1.x= (mRgba.width()/4)*3;
-		p1.y= (mRgba.height()/4)*3;
+		p1.y= (mRgba.height()/4)*3.2;
 		
 		return (p0.x <= center.x && center.x <= p1.x) &&
 				(p0.y <= center.y && center.y <= p1.y);
