@@ -214,6 +214,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     		try{
     			// escribir bytes de datos 
     			driver.setBaudRate(115200);
+
     			byte [] byteToSend = new byte[1]; 
     			byteToSend[0] = (byte)dataToSend;
     			driver.write(byteToSend, 1000);
