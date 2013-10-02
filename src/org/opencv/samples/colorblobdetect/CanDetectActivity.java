@@ -85,11 +85,7 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
         setContentView(R.layout.color_blob_detection_surface_view);
       
         // inicia camara 
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
-        mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.enableFpsMeter();
-        mOpenCvCameraView.setMaxFrameSize(400, 400);
-        //driverStatus = (TextView) findViewById(R.id.driverStatus);
+        mOpenCvCameraView = Common.getCamera(this, R.id.color_blob_detection_activity_surface_view);
 
         // Para la comunicacion serial
         this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
@@ -254,7 +250,7 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
 
     @Override
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-    	mRgba = inputFrame.rgba();
+    	mRgba = Common.filterImage(inputFrame);
     	  	
         if (mIsColorSelected) {
         	
@@ -281,8 +277,10 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
         	} catch (IOException e) {
         		// bla
         	}
-        	if (pos == 'p')
-        		android.os.Process.killProcess(android.os.Process.myPid());
+        	if (pos == 'q')  {
+        		 mIsColorSelected = false;	
+        	}
+        		
         	
         // si no veo latas 
         } else {
@@ -326,7 +324,7 @@ public class CanDetectActivity extends Activity implements OnTouchListener, CvCa
 		}else if(isInC(center)){
 			return 'w';
 		}else if(isInN(center)){
-			return 'p';
+			return 'q';
 		}
 		return 0;
 	}

@@ -17,5 +17,7 @@
     <string name="can_detect">Detectar una Lata</string>
     <string name="title_activity_cont_detect">ContDetectActivity</string>
     <string name="cont_detect">Detectar el contenedor</string>
-	<string name="open_door">Abrir Compuerta</string>
+    <string name="open_door">Abrir Compuerta</string>
+    <string name="agarrar_lata">Agarrar</string>
+    
 </resources>

@@ -204,7 +204,7 @@ public class ColorBlobDetector {
     	}
     	Point lowerCenter = new Point(x , max_y);
     	Core.circle(mRgba, lowerCenter, 3, COLOR);
-    	Log.i(TAG, "Area: " + area);
+    	//Log.i(TAG, "Area: " + area);
     	
     	Blob b = new Blob();
     	b.center = lowerCenter;

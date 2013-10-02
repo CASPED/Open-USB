@@ -59,8 +59,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar				 WHITE;
 	private Mat                  mIntermediateMat;
     
-    private char 				 prevMsg = '0'; 
+    private char 				 prevMsg = '9'; 
     private boolean				 eviteMar = false; 
+    private boolean				 bajeGarra = false;
+    private int					 jumpFrameCount = 0;
+    private int 				 timesP = 0; 
     private double 				 lowestSea = -1; 
     private double 				 highestSea; 
 
@@ -260,7 +263,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	    		// bla
 	    	}
     	}
-    	return '0'; 
+    	return '9'; 
     }
 
     @Override
@@ -311,8 +314,23 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = Common.filterImage(inputFrame);
     	
+    	/*if (bajeGarra && jumpFrameCount > 0) {
+    		jumpFrameCount--;
+    		return mRgba;
+    	}*/
+    	
         if (mIsColorSelected) {
+        	
             highestSea = mRgba.height(); 
+            
+            // leer de arduino para saber si estoy evitando un obstaculo  
+        	try {
+        		if (readData() == 'h') {
+        			esperarReinicio();
+        		}
+        	} catch (IOException e) {
+        		// bla
+        	}
         	
         	if (evitarMar()) {
         		eviteMar = true; 
@@ -328,15 +346,6 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        	prevMsg = 'd'; 
 	        	eviteMar = false;
         	}
-        	
-            // leer de arduino a ver si debo buscar contenedor 
-        	/*try {
-        		if (readData() == 'h') {
-        			modoContenedor = true;
-        		}
-        	} catch (IOException e) {
-        		// bla
-        	}*/
         	
         	if (modoContenedor) {
         		buscarContenedor();
@@ -354,58 +363,110 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
    
     private int buscarLatas() {
     	mCanDetector.process(mRgba);
-    	// si veo latas 
+    	// si tengo blobs negros
         if(mCanDetector.getNumContours()>0){  
         	// le paso el punto alto del mar para no detectar latas por encima 
         	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, highestSea);
         	Point center = can.center;
-        	//if (center.y == -1) return 1; // caso en que no consegui
-        	center.y = mCanDetector.getLowestPointSea(mRgba);
-        	char pos= getPos(center, modoContenedor);
         	
-        	// si esta abajo pero es muy peq para ser lata (caso sombras)
-        	if (pos == 'p' && can.area < 10000 ) {
+        	// si veo latas en el area dentro del mar
+        	if (center.y != -1) {
+        		
+        		center.y = mCanDetector.getLowestPointSea(mRgba);
+            	char pos= getPos(center, modoContenedor);
+            	
+            	// si esta abajo pero es muy peq para ser lata (caso sombras)
+            	if (pos == 'p' && can.area < 5000 ) {
+            	//if (pos == '0' && can.area < 5000 ) {
+            		Log.i(TAG, "SEND w");
+    	        	// Enviar informacion al arduino
+            		if (prevMsg != 'w') {
+	    	        	try {
+	    	        		sendData('w');
+	    	        	} catch (IOException e) {
+	    	        		// bla
+	    	        	}
+	    	        	prevMsg = 'w';
+            		}
+    	        	
+            	}
+            	
+            	/*if (prevMsg == '0' && pos != '0' && bajeGarra){
+            		
+            		timesP = 0; 
+            		modoContenedor = true;
+            		bajeGarra = false; 
+            		jumpFrameCount = 10; 
+            		
+            		return 1; 
+            	} */ 
+            	
+            	// si trate de agarrar antes y no pude, alejarme
+            	// si ocurre dos veces, acercarme 
+            	//if (prevMsg == '0' && pos == '0') {
+            	if (prevMsg == 'p' && pos == 'p') {
+            		try {
+            			timesP++; 
+            			if (timesP == 2){
+            				sendData('w');
+            				for(int i=0; i<1000; i++);
+            			} else if (timesP == 1) {
+            				sendData('a'); 
+            				for(int i=0; i<1000; i++);
+            			} else if (timesP > 2) {
+            				timesP = 0;
+            	        	try {
+            	        		sendData('d');
+            	        	} catch (IOException e) {
+            	        		// bla
+            	        	} 
+            	        	for(int i=0; i<1000; i++); 
+            			}
+    	        	} catch (IOException e) {
+    	        		// bla
+    	        	}
+    	        	prevMsg = pos; 
+    	        	
+            	}
+            	
+            	if (prevMsg != pos) {
+            		Log.i(TAG, "SEND " + pos);
+    	        	// Enviar informacion al arduino
+    	        	try {
+    	        		sendData(pos);
+    	        	} catch (IOException e) {
+    	        		// bla
+    	        	}
+    	        	prevMsg = pos; 
+    	        	
+            	} 
+            	
+            	if(pos == 'p'){
+            	//if(pos == '0') {
+    				esperarReinicio();
+    				bajeGarra = true;
+    				jumpFrameCount = 10; 
+    			}
+        	}
+        // no veo latas en el area o blobs negros
+        } else {
+        	if (prevMsg != 'w') {
         		Log.i(TAG, "SEND w");
-	        	// Enviar informacion al arduino
 	        	try {
 	        		sendData('w');
 	        	} catch (IOException e) {
 	        		// bla
 	        	}
+	        	prevMsg = 'w'; 
         	}
-        	//System.out.print("Posicion de la lata: " + pos);
-        	if (prevMsg == 'p' && pos != 'p'){
-        		
-        		//modoContenedor = true;
-        		
-        		//return 1; 
-        	}
-        	if (prevMsg != pos || pos == 'p') {
-        		Log.i(TAG, "SEND " + pos);
-	        	// Enviar informacion al arduino
-	        	try {
-	        		sendData(pos);
-	        	} catch (IOException e) {
-	        		// bla
-	        	}
-	        	prevMsg = pos; 
+        	for(int i=0; i<1000; i++); 
+        	try {
+        		sendData('a');
+        	} catch (IOException e) {
+        		// bla
         	} 
+        	prevMsg = 'a';      
         	
-        	if(pos == 'p'){
-				//esperarReinicio();
-			}
-        	
-        // si no veo latas 
-        } else {
-        	if (prevMsg != 'd') {
-        		Log.i(TAG, "SEND d");
-	        	try {
-	        		sendData('d');
-	        	} catch (IOException e) {
-	        		// bla
-	        	}
-	        	prevMsg = 'd'; 
-        	}
         }
         
         return 1; 
@@ -435,6 +496,24 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	if(pos == 'c'){
         		modoContenedor = false;
         		esperarReinicio();
+        		if (prevMsg != 's') {
+            		Log.i(TAG, "SEND s");
+    	        	try {
+    	        		sendData('s');
+    	        	} catch (IOException e) {
+    	        		// bla
+    	        	}
+    	        	prevMsg = 's'; 
+            	}
+            	for(int i=0; i<1000; i++); 
+            	if (prevMsg != 'd'){
+	            	try {
+	            		sendData('d');
+	            	} catch (IOException e) {
+	            		// bla
+	            	} 
+	            	prevMsg = 'd';   
+            	}
         	}
         		
         }else{
@@ -459,7 +538,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     }
     
     private void esperarReinicio(){
-    	/*boolean esperando = true;
+    	boolean esperando = true;
     	while (esperando){
 	    	try {
 	    		if (readData() == 'r') {
@@ -468,7 +547,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	    	} catch (IOException e) {
 	    		// bla
 	    	}
-    	}*/
+    	}
     }
     
     private boolean evitarMar() {
@@ -482,14 +561,14 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	lowestSea = mSeaDetector.getLowestPointSea(mRgba);
         	highestSea =  mSeaDetector.getHighestPointSea(mRgba);
         	if(lowestSea > (mRgba.height()/8)*7){
-        		if (prevMsg != 's') {
+        		if (prevMsg != 'd') {
 	        		try {
-	                	Log.i(TAG, "SEND s");
-	            		sendData('s');
+	                	Log.i(TAG, "SEND d");
+	            		sendData('d');
 	            	} catch (IOException e) {
 	            		// bla
 	            	}
-	        		prevMsg = 's'; 
+	        		prevMsg = 'd'; 
         		}
         		return true;
         	}
@@ -533,6 +612,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 				return 'c'; 
 			} else {
 				return 'p';
+				//return '0';
 			}
 		}
 		return 0;

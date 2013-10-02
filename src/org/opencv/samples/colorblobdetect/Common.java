@@ -30,19 +30,19 @@ public class Common {
 	    //Filtros de Oliver:
 	    ////Imgproc.resize(mIntermediateMat, mIntermediateMat, mSize0, 0.2, 0.2, Imgproc.INTER_NEAREST);
 	    ////Imgproc.GaussianBlur(mIntermediateMat, mIntermediateMat, new Size(9, 9), 10.0);
-	    //Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGBA2RGB);
-	    //Imgproc.pyrMeanShiftFiltering(mIntermediateMat, mIntermediateMat, 10, 200);
-	    //Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGB2RGBA);
+	    Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGBA2RGB);
+	    Imgproc.pyrMeanShiftFiltering(mIntermediateMat, mIntermediateMat, 10, 200);
+	    Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGB2RGBA);
 	    ////Imgproc.resize(mIntermediateMat, mIntermediateMat, mSizeRgbaInner, 0., 0., Imgproc.INTER_NEAREST);
 	    ////Core.convertScaleAbs(mIntermediateMat, mIntermediateMat, 1./128, 0);
 	    ////Core.convertScaleAbs(mIntermediateMat, mIntermediateMat, 128, 0);
 	    
 	    //Filtros de Jennifer:
 	    
-	    Imgproc.GaussianBlur(mIntermediateMat, mIntermediateMat, new Size(11,11), 0);
+	    /*Imgproc.GaussianBlur(mIntermediateMat, mIntermediateMat, new Size(11,11), 0);
 	    Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGBA2RGB);
 	    Imgproc.pyrMeanShiftFiltering(mIntermediateMat, mIntermediateMat, 10, 200);
-	    Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGB2RGBA);
+	    Imgproc.cvtColor(mIntermediateMat, mIntermediateMat, Imgproc.COLOR_RGB2RGBA);*/
 	    
 	    mIntermediateMat.copyTo(mRgbaWindow);
 	    

@@ -108,6 +108,58 @@ public class MainActivity extends Activity {
 
         });
         
+     // Prueba de agarrar lata
+        Button agarrarLata = (Button) findViewById(R.id.buttonAgarrarLata);
+        agarrarLata.setOnClickListener(new View.OnClickListener() {
+        	private static final String TAG = "OCVSample::Activity"; 
+        	UsbManager manager;
+        	UsbSerialDriver sendDriver; 
+        	
+        	@Override
+        	public void onClick(View view) {
+        		Log.i(TAG, "Send p");
+        		this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+            	this.sendDriver = UsbSerialProber.acquire(this.manager);
+            	
+            	if (sendDriver == null) {
+                	Log.i(TAG, "No se encontro dispositivo");
+                } else {
+                    try {
+                    	sendDriver.open();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error configurando el dispositivo: " + e.getMessage(), e);
+                        try {
+                            sendDriver.close();
+                        } catch (IOException e2) {
+                            // Ignore.
+                        }
+                        sendDriver = null;
+                        return;
+                    }
+                }
+            	
+            	if(sendDriver != null) {
+            		try{
+            			// escribir bytes de datos 
+            			sendDriver.setBaudRate(115200);
+            			byte [] byteToSend = new byte[1]; 
+            			byteToSend[0] = (byte)'p';
+            			sendDriver.write(byteToSend, 1000);
+            			Log.e(TAG, "Si pude enviar");
+            		} catch (IOException e) {
+            			Log.e(TAG, "No pude enviar");
+            		} finally {
+            			try {
+                            sendDriver.close();
+                        } catch (IOException e2) {
+                        	Log.i(TAG, "Se ha cerrado el driver");
+                        }
+            		}
+            	}
+        	}
+        }); 
+        
+        
      // Prueba de demostracion. Abrir Contenedor
     	Button abrirCont = (Button) findViewById(R.id.buttonOpenDoor);
         abrirCont.setOnClickListener(new View.OnClickListener() {
@@ -117,6 +169,8 @@ public class MainActivity extends Activity {
         	
             @Override
 			public void onClick(View view) {
+        		Log.i(TAG, "Send 2");
+
             	this.manager = (UsbManager) getSystemService(Context.USB_SERVICE);
             	this.sendDriver = UsbSerialProber.acquire(this.manager);
             	
@@ -139,6 +193,7 @@ public class MainActivity extends Activity {
             	
             	if(sendDriver != null) {
             		try{
+            			Log.i(TAG, "Send 2");
             			// escribir bytes de datos 
             			sendDriver.setBaudRate(115200);
             			byte [] byteToSend = new byte[1]; 
