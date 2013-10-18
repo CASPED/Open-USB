@@ -13,25 +13,15 @@ import android.widget.Button;
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
-import com.http.debug.HTTPrint;
 
 
 public class MainActivity extends Activity {
-	
-	HTTPrint http_print;
 	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
-		/** Aqu� se inicializa el debugger de http, en el parametro hay que poner el IP del
-		 * servidor.
-		 */
-		//http_print = new HTTPrint("http://192.168.0.105");
-		//Cada print deber�a enviarse al servidor:
-		System.out.print("Planificador incializado.");
 		
 		// boton acceso a calibrar lata
 		Button calibrarLata = (Button) findViewById(R.id.buttonCalibrarLatas);
