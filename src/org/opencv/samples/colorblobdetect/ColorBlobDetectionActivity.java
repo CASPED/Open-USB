@@ -61,12 +61,15 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     
     private char 				 prevMsg = '9';
     private boolean 			 esperandoReinicio = false; 
-    private boolean				 evitandoObstaculos = false; 
     private double 				 lowestSea = -1; 
     private double 				 highestSea; 
-    private int 				 segsDelay = 1; 
+    
+    // controles y delay para saber si agarre la lata 
+    private int 				 segsDelay = 2; 
     private int					 frameSteps = 5*segsDelay; 
     private int					 frameCount = 0; 
+    private int					 latasAgarradas = 0;
+    
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
@@ -315,14 +318,22 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	mRgba = Common.filterImage(inputFrame);
     	
     	// saltarme los frames sin procesar si estoy esperando reinicio
-    	if (esperandoReinicio) {
+    	// o si espero X segundos para revisar la camara luego de reiniciado
+    	if (esperandoReinicio || frameCount > 0) {
     		try {
 	    		if (readData() == 'r') {
+	    			// ya arduino pidio reiniciar y empieza el contador de frames 
+	    			// para darle chance a la camara de ver algo distinto
 	    			esperandoReinicio = false;
+	    			frameCount = frameSteps; 
 	    		}
 	    	} catch (IOException e) {
 	    		// bla
 	    	}
+    		// ya reinicie pero aun salto frames para actualizar imagen
+    		if (!esperandoReinicio){
+    			frameCount--; 
+    		}
     		return mRgba; 
     	}
     	
@@ -374,6 +385,13 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         		
         		center.y = mCanDetector.getLowestPointSea(mRgba);
             	char pos= getPos(center, modoContenedor);
+            	
+            	// si antes vi p y ya no, significa que la agarre. 
+            	// incrementar contador 
+            	if(pos != 'p' && prevMsg == 'p'){
+            		latasAgarradas++; 
+            		Log.i(TAG, "Agarre lata numero " + latasAgarradas); 
+            	}
             	
             	// si esta abajo pero es muy peq para ser lata (caso sombras)
             	// mando a mover hacia adelante y me salgo de la funcion 

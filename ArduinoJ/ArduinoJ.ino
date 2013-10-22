@@ -144,6 +144,9 @@ void evitarObstaculos(){
   
   boolean evitando = false; 
   
+  //Serial.println(sonarDer);
+  //Serial.println(sonarIzq); 
+  
   if(sonarIzq<=35 || sonarDer<=35){
     Serial.write('h');
     evitando = true;
@@ -151,7 +154,6 @@ void evitarObstaculos(){
   
   while(sonarIzq<=35 || sonarDer<=35){
     stop_move();
-  
       
     if(sonarIzq <= 35 ){
        turn_right();
@@ -162,6 +164,9 @@ void evitarObstaculos(){
        delay(400);
        stop_move();
     }
+    
+    sonarDer = sonar[0].ping_cm();
+    sonarIzq = sonar[1].ping_cm();
   }
   
   if(evitando){
@@ -177,7 +182,10 @@ void loop() {
   }*/
   
   potenciometro();
-    char opcion;
+  
+  evitarObstaculos(); 
+  
+  char opcion;
     if(Serial.available()>0) {
         opcion = Serial.read();
         if(opcion == 'd') {
@@ -192,6 +200,7 @@ void loop() {
             recoger_lata(); 
             // aviso que recogi la lata
             Serial.write('r');
+        }else if (opcion == '2') {
         }
        
     }

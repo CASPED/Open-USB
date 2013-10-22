@@ -16,7 +16,15 @@ No. Puerto
 */
 
 
+/*Distancia
 
+
+*/
+
+
+int sonarIzq; // izquierda
+int sonarDer; // derecha
+int dist = 30;
 
 //***********************************************
 //                                              *
@@ -214,8 +222,7 @@ void setup()
      delay(100);
      compuerta1.write(5);
      
-     
-     
+   
      
        
        /***********************************************
@@ -269,7 +276,9 @@ delay(100);
      
      garra.attach(12);
      brazo.attach(13);
-     regresarBrazo();
+     //regresarBrazo();
+       
+    
 }
 
 
@@ -331,7 +340,9 @@ void loop()
           //do{
           digitalWrite(rojo,LOW);  
           digitalWrite(blanco,HIGH); 
-          digitalWrite(verde,HIGH);   
+          digitalWrite(verde,HIGH);
+          //retroceder(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+          //delay(500);   
           girarDerecha(out1,out2,out3,out4,out5,out6,out7,out8,vel);
           //} while(Serial.available() <= 0); 
           
@@ -342,7 +353,9 @@ void loop()
           //do{
           digitalWrite(blanco,LOW);   
           digitalWrite(verde,HIGH); 
-          digitalWrite(rojo,HIGH);   
+          digitalWrite(rojo,HIGH);  
+          //retroceder(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+          //delay(500);  
           girarIzquierda(out1,out2,out3,out4,out5,out6,out7,out8,vel);
           //} while(Serial.available() <= 0); 
            
@@ -383,13 +396,22 @@ void loop()
           detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
           
           //agarrarLata();
-          sostenerLata();
+          agarrarLata();
          //} while(Serial.available() <= 0); 
           break;
           
           
           
           
+          
+          
+           case 'q': 
+          
+          
+          detener(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+          
+        
+          break;
           
           //****************************************************
           
@@ -598,9 +620,27 @@ void loop()
   
 */      
 
-
-           
-        
+  /* 
+  
+      DISTANCIA 
+      
+      
+      */
+     /* 
+    sonarIzq = sonar[0].ping_cm();
+    sonarDer = sonar[1].ping_cm();
+    
+    if(sonarIzq < dist || sonarDer < dist){
+      Serial.write('h');
+      if(sonarIzq < sonarDer){
+        girarDerecha(out1,out2,out3,out4,out5,out6,out7,out8,vel);        
+      }else{
+        girarIzquierda(out1,out2,out3,out4,out5,out6,out7,out8,vel);
+      }
+      delay(1000);
+      Serial.write('r');
+    }
+    */
   
 }
 
@@ -842,10 +882,11 @@ void ancho_pulso(const int encoder, int *c, unsigned long *high_value, unsigned 
 
 void regresarBrazo() {
     subirPolea();
+    brazo.write(35);
     while(true) if(digitalRead(POLEA_SENSOR_ALTO_PIN) == HIGH) break;
     pararPolea();
     
-    brazo.write(0);
+    
     delay(1500);
     garra.write(120);
     delay(600);
@@ -853,11 +894,11 @@ void regresarBrazo() {
 }
 
 void mantenerBrazo() {
-    subirPolea();
+    brazo.write(35);
+    subirPolea();  
     while(true) if(digitalRead(POLEA_SENSOR_ALTO_PIN) == HIGH) break;
     pararPolea();
-    brazo.write(0);
-   
+    
 }
 
 void agarrarLata() {
@@ -990,6 +1031,23 @@ void subirPolea() {
  
 */
 
-
-
+void test(const int mot1_pin1, const int mot1_pin2,const int mot2_pin1, const int mot2_pin2,const int mot3_pin1, const int mot3_pin2,const int mot4_pin1, const int mot4_pin2,const int vel)
+  {
+    //Motor 1
+    analogWrite(mot1_pin1,0);
+    analogWrite(mot1_pin2,0);
+    
+     //Motor 2
+    analogWrite(mot2_pin1,0);
+    analogWrite(mot2_pin2,0);
+    
+     //Motor 3
+    analogWrite(mot3_pin1,0);
+    analogWrite(mot3_pin2,vel);
+    
+     //Motor 4
+    analogWrite(mot4_pin1,0);
+    analogWrite(mot4_pin2,0);
+    
+  }
 
