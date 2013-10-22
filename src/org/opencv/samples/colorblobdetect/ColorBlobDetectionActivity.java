@@ -59,14 +59,14 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     private Scalar				 WHITE;
 	private Mat                  mIntermediateMat;
     
-    private char 				 prevMsg = '9'; 
-    private boolean				 eviteMar = false; 
-    private boolean				 bajeGarra = false;
-    private int					 jumpFrameCount = 0;
-    private int 				 timesP = 0; 
+    private char 				 prevMsg = '9';
+    private boolean 			 esperandoReinicio = false; 
+    private boolean				 evitandoObstaculos = false; 
     private double 				 lowestSea = -1; 
     private double 				 highestSea; 
-
+    private int 				 segsDelay = 1; 
+    private int					 frameSteps = 5*segsDelay; 
+    private int					 frameCount = 0; 
     
     private CameraBridgeViewBase mOpenCvCameraView;
     
@@ -314,39 +314,38 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
     	mRgba = Common.filterImage(inputFrame);
     	
-    	/*if (bajeGarra && jumpFrameCount > 0) {
-    		jumpFrameCount--;
-    		return mRgba;
-    	}*/
+    	// saltarme los frames sin procesar si estoy esperando reinicio
+    	if (esperandoReinicio) {
+    		try {
+	    		if (readData() == 'r') {
+	    			esperandoReinicio = false;
+	    		}
+	    	} catch (IOException e) {
+	    		// bla
+	    	}
+    		return mRgba; 
+    	}
     	
+    	// leer de arduino para ver si esta evitando obstaculos y quedarme callado 
+    	try {
+    		if (readData() == 'h') {
+    			esperandoReinicio = true;
+    			return mRgba; 
+    		}
+    	} catch (IOException e) {
+    		// bla
+    	}
+
+    	
+    	// aqui si proceso
         if (mIsColorSelected) {
         	
-            highestSea = mRgba.height(); 
-            
-            // leer de arduino para saber si estoy evitando un obstaculo  
-        	try {
-        		if (readData() == 'h') {
-        			esperarReinicio();
-        		}
-        	} catch (IOException e) {
-        		// bla
-        	}
+            highestSea = 0; 
         	
         	if (evitarMar()) {
-        		eviteMar = true; 
         		return mRgba; 
         	}
-        	if (eviteMar){
-        		Log.i(TAG, "SEND d");
-	        	try {
-	        		sendData('d');
-	        	} catch (IOException e) {
-	        		// bla
-	        	}
-	        	prevMsg = 'd'; 
-	        	eviteMar = false;
-        	}
-        	
+        		
         	if (modoContenedor) {
         		buscarContenedor();
         	} else {
@@ -366,45 +365,38 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	// si tengo blobs negros
         if(mCanDetector.getNumContours()>0){  
         	// le paso el punto alto del mar para no detectar latas por encima 
+        	// esta condicion esta comentada ahora
         	Blob can = mCanDetector.getNearestObject(mRgba, RECTANGLE_COLOR, highestSea);
         	Point center = can.center;
         	
-        	// si veo latas en el area dentro del mar
+        	// si veo latas 
         	if (center.y != -1) {
         		
         		center.y = mCanDetector.getLowestPointSea(mRgba);
             	char pos= getPos(center, modoContenedor);
             	
             	// si esta abajo pero es muy peq para ser lata (caso sombras)
+            	// mando a mover hacia adelante y me salgo de la funcion 
             	if (pos == 'p' && can.area < 5000 ) {
-            	//if (pos == '0' && can.area < 5000 ) {
-            		Log.i(TAG, "SEND w");
     	        	// Enviar informacion al arduino
             		if (prevMsg != 'w') {
 	    	        	try {
+	    	        		Log.i(TAG, "Send w"); 
 	    	        		sendData('w');
 	    	        	} catch (IOException e) {
 	    	        		// bla
 	    	        	}
 	    	        	prevMsg = 'w';
             		}
+            		return 1; 
     	        	
             	}
             	
-            	/*if (prevMsg == '0' && pos != '0' && bajeGarra){
-            		
-            		timesP = 0; 
-            		modoContenedor = true;
-            		bajeGarra = false; 
-            		jumpFrameCount = 10; 
-            		
-            		return 1; 
-            	} */ 
             	
             	// si trate de agarrar antes y no pude, alejarme
             	// si ocurre dos veces, acercarme 
             	//if (prevMsg == '0' && pos == '0') {
-            	if (prevMsg == 'p' && pos == 'p') {
+            	/*if (prevMsg == 'p' && pos == 'p') {
             		try {
             			timesP++; 
             			if (timesP == 2){
@@ -427,7 +419,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	        	}
     	        	prevMsg = pos; 
     	        	
-            	}
+            	}*/ 
             	
             	if (prevMsg != pos) {
             		Log.i(TAG, "SEND " + pos);
@@ -441,16 +433,18 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
     	        	
             	} 
             	
+            	// si me pare a agarrar, debo esperar que el robot termine el movimiento 
             	if(pos == 'p'){
-            	//if(pos == '0') {
-    				esperarReinicio();
-    				bajeGarra = true;
-    				jumpFrameCount = 10; 
+    				//esperarReinicio();
+            		esperandoReinicio = true; 
+            		return 1; 
     			}
         	}
         // no veo latas en el area o blobs negros
         } else {
+        	// giro hacia la izquierda
         	if (prevMsg != 'w') {
+        		Log.i(TAG, "No veo latas!");
         		Log.i(TAG, "SEND w");
 	        	try {
 	        		sendData('w');
@@ -458,29 +452,20 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        		// bla
 	        	}
 	        	prevMsg = 'w'; 
-        	}
-        	for(int i=0; i<1000; i++); 
-        	try {
-        		sendData('a');
-        	} catch (IOException e) {
-        		// bla
-        	} 
-        	prevMsg = 'a';      
-        	
-        }
-        
+        	}        	        	
+        }     
         return 1; 
     }
     
     private void buscarContenedor() {
     	mContDetector.process(mRgba);
 		
-		// encuentra el punto medio del contenedor y lo dibuja
 		if(mContDetector.getNumContours()>0){
 			Blob contenedor = mContDetector.getNearestObject(mRgba, CONT_COLOR, lowestSea);
 			Point center = contenedor.center;
         	center.y = mContDetector.getLowestPointSea(mRgba);
         	char pos= getPos(center, modoContenedor);
+        	
         	if (prevMsg != pos) {
         	//System.out.print("Posicion del contenedor: " + pos);
         		Log.i(TAG, "SEND " + pos);
@@ -495,32 +480,18 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 			
         	if(pos == 'c'){
         		modoContenedor = false;
-        		esperarReinicio();
-        		if (prevMsg != 's') {
-            		Log.i(TAG, "SEND s");
-    	        	try {
-    	        		sendData('s');
-    	        	} catch (IOException e) {
-    	        		// bla
-    	        	}
-    	        	prevMsg = 's'; 
-            	}
-            	for(int i=0; i<1000; i++); 
-            	if (prevMsg != 'd'){
-	            	try {
-	            		sendData('d');
-	            	} catch (IOException e) {
-	            		// bla
-	            	} 
-	            	prevMsg = 'd';   
-            	}
+        		esperandoReinicio=true;
+        		
         	}
         		
         }else{
-        	if (prevMsg != 'd') {
-        		Log.i(TAG, "SEND d");
+        	// seguir hacia adelante si no veo el contenedor 
+        	// dejar de evitacion de obs y mar se encargue de cambiar dir 
+        	if (prevMsg != 'w') {
+        		Log.i(TAG, "SEND w");
         		try {
-        			sendData('d');
+            		Log.i(TAG, "No veo al contenedor!");
+        			sendData('w');
         		} catch (IOException e) {
         			// bla
         		}
@@ -528,6 +499,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         }
 				
     }
+    
     
     private void initArduino(){
     	try {
@@ -557,9 +529,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	
         	mSeaDetector.drawRectangles(mRgba, SEA_COLOR);
         	
-            // Si el mar esta cerca enviar 's' al arduino
+            //obtener el punto mas bajo y mas alto del mar
         	lowestSea = mSeaDetector.getLowestPointSea(mRgba);
         	highestSea =  mSeaDetector.getHighestPointSea(mRgba);
+        	
+        	// si tengo al mar cerca, giro a la derecha 
         	if(lowestSea > (mRgba.height()/8)*7){
         		if (prevMsg != 'd') {
 	        		try {

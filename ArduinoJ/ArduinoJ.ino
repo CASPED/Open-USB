@@ -84,6 +84,32 @@ void stop_move() {
     motorGarra.stop();
 }
 
+void recoger_lata() {
+    //BAja
+    goalBrazo = 0;
+    while(abs(potenciometro()) > 50);
+    // Abre
+    motorGarra.backward(150);
+    delay(1500);
+    motorGarra.stop();            
+    forward();
+    delay(500);
+    stop_move();
+    //Cierre
+    motorGarra.forward(150);
+    delay(1700);
+    motorGarra.stop();
+    // SUbe
+    goalBrazo = 550;
+    while(abs(potenciometro()) > 50);
+    // Abre
+    motorGarra.backward(150);
+    delay(1000);
+    motorGarra.stop();            
+            
+    stop_move();     
+}
+
 int potenciometro(){
   
   // Promedio de mediciones
@@ -112,28 +138,42 @@ int potenciometro(){
 }
 
 void evitarObstaculos(){
+  
   sonarDer = sonar[0].ping_cm();
   sonarIzq = sonar[1].ping_cm();
   
-  if(sonarIzq<=40 || sonarDer<=40){
+  boolean evitando = false; 
+  
+  if(sonarIzq<=35 || sonarDer<=35){
+    Serial.write('h');
+    evitando = true;
+  }
+  
+  while(sonarIzq<=35 || sonarDer<=35){
     stop_move();
-  }
+  
       
-  if(sonarIzq <= 35 ){
-     turn_right();
-     delay(400);
-     stop_move();
-  }else if(sonarDer <= 35){
-     turn_left();
-     delay(400);
-     stop_move();
+    if(sonarIzq <= 35 ){
+       turn_right();
+       delay(400);
+       stop_move();
+    }else if(sonarDer <= 35){
+       turn_left();
+       delay(400);
+       stop_move();
+    }
   }
+  
+  if(evitando){
+    Serial.write('r'); 
+  }
+ 
 }
 
 void loop() {
   
   /*if(abs(potenciometro()) < 50){
-    evitarObstaculos();
+      evitarObstaculos();
   }*/
   
   potenciometro();
@@ -149,43 +189,9 @@ void loop() {
         }else if (opcion == 's'){
             backward();
         }else if (opcion == 'p') {
-            //BAja
-            goalBrazo = 0;
-             while(abs(potenciometro()) > 50);
-            // Abre
-            motorGarra.backward(150);
-            delay(1500);
-            motorGarra.stop();            
-            forward();
-            delay(500);
-            stop_move();
-            //Cierre
-            motorGarra.forward(150);
-            delay(1700);
-            motorGarra.stop();
-            // SUbe
-            goalBrazo = 550;
-            while(abs(potenciometro()) > 50);
-            // Abre
-            motorGarra.backward(150);
-            delay(1000);
-            motorGarra.stop();            
-            
-            stop_move();     
-        }else if (opcion == 'g'){
-            motorGarra.backward(150);
-            delay(1000);
-            motorGarra.stop();            
-        }else if (opcion == 'b' ){
-            goalBrazo = brazoArriba;
-            while(abs(potenciometro()) > 50);
-        }else if (opcion == 'n'){
-            motorGarra.forward(150);
-            delay(1200);
-            motorGarra.stop();
-        }else if (opcion == 'v'){
-            goalBrazo = brazoAbajo;
-            while(abs(potenciometro()) > 50);
+            recoger_lata(); 
+            // aviso que recogi la lata
+            Serial.write('r');
         }
        
     }
