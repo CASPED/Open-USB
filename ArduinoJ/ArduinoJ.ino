@@ -23,8 +23,8 @@ Motor motorBrazo = {11,30,31};
 Motor motorGarra = {12, 32, 33};
 
 // posicion del brazo
-int brazoArriba = 550;
-int brazoAbajo = 0;
+int brazoArriba = 1022;
+int brazoAbajo = 600;
 int goalBrazo = brazoArriba; // Arriba o abajo
 
 //servos compuertas
@@ -33,7 +33,7 @@ Servo compuerta2;
 
 const int feedback = A0;
 
-int speed = 100;
+int speed = 70;
 
 void setup() {
     // flag para verificar arduino 
@@ -53,7 +53,7 @@ void setup() {
     compuerta2.attach(47);
     
     // brazo
-    goalBrazo = 550;
+    goalBrazo = brazoArriba;
     while(abs(potenciometro()) > 50);
 }
 
@@ -72,13 +72,25 @@ void backward() {
 }
 
 void turn_right() {
+      // bajar la velocidad de las cuatro ruedas
+    motorRF.decrease(speed);
+    motorRB.decrease(speed);
+    motorLF.decrease(speed);
+    motorLB.decrease(speed)
+    //girar
     motorRF.backward(speed);
     motorRB.backward(speed);
     motorLF.forward(speed);
     motorLB.forward(speed);
 }
 
-void turn_left() {
+void turn_left() { 
+    // bajar la velocidad de las cuatro ruedas
+    motorRF.decrease(speed);
+    motorRB.decrease(speed);
+    motorLF.decrease(speed);
+    motorLB.decrease(speed);
+    // girar
     motorRF.forward(speed);
     motorRB.forward(speed);
     motorLF.backward(speed);
@@ -86,17 +98,19 @@ void turn_left() {
 }
 
 void stop_move() {
+    // parar movimiento ruedas
     motorRF.stop();
     motorRB.stop();
     motorLF.stop();
     motorLB.stop();
+    // parar movimiento brazo
     motorBrazo.stop();
     motorGarra.stop();
 }
 
 void recoger_lata() {
     //BAja
-    goalBrazo = 0;
+    goalBrazo = brazoAbajo;
     while(abs(potenciometro()) > 50);
     // Abre
     motorGarra.backward(150);
@@ -110,7 +124,7 @@ void recoger_lata() {
     delay(1700);
     motorGarra.stop();
     // SUbe
-    goalBrazo = 550;
+    goalBrazo = brazoArriba;
     while(abs(potenciometro()) > 50);
     // Abre
     motorGarra.backward(150);
@@ -129,17 +143,20 @@ int potenciometro(){
         delayMicroseconds(10);
     }
     prom_pos = prom_pos/5;
-      
+    
     int diff = prom_pos - goalBrazo;
-      
-    if(goalBrazo == 550) {
+    
+    if(goalBrazo == brazoArriba) {
+        // si esta muy abajo, subir con fuerza
         if(diff < -200) { 
             motorBrazo.backward(255);
+        // si esta un poco abajo, subir despacio
         } else if(diff < -5) {
             motorBrazo.backward(100 + diff);
         } else {
             motorBrazo.stop();
         }
+    // queremos tener el brazo abajo
     } else {
         if(diff > 50) motorBrazo.forward(150);
         else motorBrazo.stop();
@@ -149,6 +166,7 @@ int potenciometro(){
 
 void evitarObstaculos(){
   
+    // tomar medidas sonares
     sonarDer = sonar[0].ping_cm();
     sonarIzq = sonar[1].ping_cm();
     
@@ -157,6 +175,7 @@ void evitarObstaculos(){
     //Serial.println(sonarDer);
     //Serial.println(sonarIzq); 
     
+    // aviso que evitare obstaculos
     if(sonarIzq<=35 || sonarDer<=35){
         Serial.write('h');
         evitando = true;
@@ -175,10 +194,12 @@ void evitarObstaculos(){
              stop_move();
         }
       
+        // actualizar medidas sonares
         sonarDer = sonar[0].ping_cm();
         sonarIzq = sonar[1].ping_cm();
     }
     
+    // aviso que termine de evitar obstaculos 
     if(evitando){
         Serial.write('r'); 
     }   
@@ -209,7 +230,7 @@ void loop() {
   
     potenciometro();
     
-    //evitarObstaculos(); 
+    evitarObstaculos(); 
   
     char opcion;
     if(Serial.available()>0) {

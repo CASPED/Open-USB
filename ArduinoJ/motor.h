@@ -13,8 +13,8 @@ public:
         pinMode(dirF_pin, OUTPUT); 
         pinMode(dirB_pin, OUTPUT); 
         digitalWrite(spd_pin, LOW); 
-        digitalWrite(dirF_pin, LOW); 
-        digitalWrite(dirB_pin, LOW); 
+        (dirF_pin, LOW); 
+        pinMode(dirB_pin, LOW); 
     }
 
     //El motor gira hacia "adelante"
@@ -37,13 +37,24 @@ public:
         digitalWrite(dirF_pin, HIGH); 
         digitalWrite(dirB_pin, HIGH); 
     }
-
+    
     //Apaga el motor
     void stop() {
         analogWrite(spd_pin, 0);
         digitalWrite(dirF_pin, LOW); 
         digitalWrite(dirB_pin, LOW); 
     }
+    
+    // baja la velocidad gradualmente para no ahogar motores
+    void decrease(int speed) {
+        analogWrite(spd_pin, speed/2);
+        delay(100);
+        analogWrite(spd_pin, speed/4);
+        delay(100);
+        analogWrite(spd_pin, 0);
+        delay(100);
+    }
+    
 } Motor;
 
 #endif
