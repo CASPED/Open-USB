@@ -27,15 +27,20 @@ int brazoArriba = 550;
 int brazoAbajo = 0;
 int goalBrazo = brazoArriba; // Arriba o abajo
 
+//servos compuertas
+Servo compuerta1;
+Servo compuerta2; 
+
 const int feedback = A0;
 
 int speed = 100;
 
 void setup() {
-    // initialize serial communication at 9600 bits per second:
+    // flag para verificar arduino 
     Serial.begin(115200);
     Serial.println("HOLA :)");
     
+    // motores ruedas
     motorRF.init();
     motorRB.init();
     motorLF.init();
@@ -43,6 +48,11 @@ void setup() {
     motorBrazo.init();
     motorGarra.init();
     
+    // servos compuertas
+    compuerta1.attach(46);
+    compuerta2.attach(47);
+    
+    // brazo
     goalBrazo = 550;
     while(abs(potenciometro()) > 50);
 }
@@ -112,80 +122,96 @@ void recoger_lata() {
 
 int potenciometro(){
   
-  // Promedio de mediciones
-  int i = 0, prom_pos = 0;
-  for(i = 0; i < 5; i++) {
-    prom_pos += analogRead(feedback);
-    delayMicroseconds(10);
-  }
-  prom_pos = prom_pos/5;
-    
-  int diff = prom_pos - goalBrazo;
-    
-  if(goalBrazo == 550) {
-    if(diff < -200) { 
-      motorBrazo.backward(255);
-    } else if(diff < -5) {
-      motorBrazo.backward(100 + diff);
-    } else {
-      motorBrazo.stop();
+    // Promedio de mediciones
+    int i = 0, prom_pos = 0;
+    for(i = 0; i < 5; i++) {
+        prom_pos += analogRead(feedback);
+        delayMicroseconds(10);
     }
-  } else {
-    if(diff > 50) motorBrazo.forward(150);
-    else motorBrazo.stop();
-  }
-  return diff;
+    prom_pos = prom_pos/5;
+      
+    int diff = prom_pos - goalBrazo;
+      
+    if(goalBrazo == 550) {
+        if(diff < -200) { 
+            motorBrazo.backward(255);
+        } else if(diff < -5) {
+            motorBrazo.backward(100 + diff);
+        } else {
+            motorBrazo.stop();
+        }
+    } else {
+        if(diff > 50) motorBrazo.forward(150);
+        else motorBrazo.stop();
+    }
+    return diff;
 }
 
 void evitarObstaculos(){
   
-  sonarDer = sonar[0].ping_cm();
-  sonarIzq = sonar[1].ping_cm();
-  
-  boolean evitando = false; 
-  
-  //Serial.println(sonarDer);
-  //Serial.println(sonarIzq); 
-  
-  if(sonarIzq<=35 || sonarDer<=35){
-    Serial.write('h');
-    evitando = true;
-  }
-  
-  while(sonarIzq<=35 || sonarDer<=35){
-    stop_move();
-      
-    if(sonarIzq <= 35 ){
-       turn_right();
-       delay(400);
-       stop_move();
-    }else if(sonarDer <= 35){
-       turn_left();
-       delay(400);
-       stop_move();
-    }
-    
     sonarDer = sonar[0].ping_cm();
     sonarIzq = sonar[1].ping_cm();
-  }
-  
-  if(evitando){
-    Serial.write('r'); 
-  }
- 
+    
+    boolean evitando = false; 
+    
+    //Serial.println(sonarDer);
+    //Serial.println(sonarIzq); 
+    
+    if(sonarIzq<=35 || sonarDer<=35){
+        Serial.write('h');
+        evitando = true;
+    }
+    
+    while(sonarIzq<=35 || sonarDer<=35){
+        stop_move();
+          
+        if(sonarIzq <= 35 ){
+             turn_right();
+             delay(400);
+             stop_move();
+        }else if(sonarDer <= 35){
+             turn_left();
+             delay(400);
+             stop_move();
+        }
+      
+        sonarDer = sonar[0].ping_cm();
+        sonarIzq = sonar[1].ping_cm();
+    }
+    
+    if(evitando){
+        Serial.write('r'); 
+    }   
+}
+
+void abrir_compuertas(){
+    compuerta2.write(50);
+    compuerta1.write(120);
+}
+
+void meneito(){
+    turn_right();
+    delay(500);
+    turn_left();
+    delay(500);
+    turn_right();
+    delay(500);
+    turn_left();
+    delay(500);
+    stop_move();
 }
 
 void loop() {
   
-  /*if(abs(potenciometro()) < 50){
-      evitarObstaculos();
-  }*/
+    /*if(abs(potenciometro()) < 50){
+        evitarObstaculos();
+    }*/
   
-  potenciometro();
+    potenciometro();
+    
+    //evitarObstaculos(); 
   
-  evitarObstaculos(); 
-  
-  char opcion;
+    char opcion;
     if(Serial.available()>0) {
         opcion = Serial.read();
         if(opcion == 'd') {
@@ -200,7 +226,11 @@ void loop() {
             recoger_lata(); 
             // aviso que recogi la lata
             Serial.write('r');
+        } else if (opcion == 'q') {
+            stop_move(); 
         }else if (opcion == '2') {
+            abrir_compuertas(); 
+            meneito(); 
         }
        
     }

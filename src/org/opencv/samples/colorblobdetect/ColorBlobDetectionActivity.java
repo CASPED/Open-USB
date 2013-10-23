@@ -373,6 +373,7 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
    
     private int buscarLatas() {
     	mCanDetector.process(mRgba);
+    	
     	// si tengo blobs negros
         if(mCanDetector.getNumContours()>0){  
         	// le paso el punto alto del mar para no detectar latas por encima 
@@ -460,6 +461,12 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
         	}
         // no veo latas en el area o blobs negros
         } else {
+        	// Si estaba agarrando una lata y ya no veo nada, significa que la agarre
+        	if( prevMsg == 'p'){
+        		latasAgarradas++; 
+        		Log.i(TAG, "Agarre lata numero " + latasAgarradas); 
+        	}
+        	
         	// giro hacia la izquierda
         	if (prevMsg != 'w') {
         		Log.i(TAG, "No veo latas!");
@@ -472,6 +479,11 @@ public class ColorBlobDetectionActivity extends Activity implements OnTouchListe
 	        	prevMsg = 'w'; 
         	}        	        	
         }     
+        
+        if(latasAgarradas == 10){
+        	modoContenedor= true;
+        	Log.i(TAG, "Buscar Contenedor");
+        }
         return 1; 
     }
     

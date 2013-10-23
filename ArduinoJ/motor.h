@@ -12,6 +12,9 @@ public:
         pinMode(spd_pin, OUTPUT); 
         pinMode(dirF_pin, OUTPUT); 
         pinMode(dirB_pin, OUTPUT); 
+        digitalWrite(spd_pin, LOW); 
+        digitalWrite(dirF_pin, LOW); 
+        digitalWrite(dirB_pin, LOW); 
     }
 
     //El motor gira hacia "adelante"
